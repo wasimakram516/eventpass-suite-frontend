@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -9,12 +9,8 @@ import {
   CircularProgress,
   Container,
   Divider,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
   Pagination,
-  Select,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -29,7 +25,9 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import AppCard from "@/components/cards/AppCard";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getGameBySlug } from "@/services/crosszero/gameService";
@@ -39,6 +37,7 @@ import {
 } from "@/services/crosszero/playerService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { useGameResultsStream } from "@/hooks/useGameResultsSocket";
 
 const translations = {
   en: {
@@ -55,7 +54,8 @@ const translations = {
     showing: "Showing",
     of: "of",
     records: "records",
-    perPage: "Per page",
+    perPage: "Records per page",
+    searchPlaceholder: "Search...",
     X_wins: "AI Wins",
     O_wins: "Player Wins",
     draw: "Draw",
@@ -75,7 +75,8 @@ const translations = {
     showing: "عرض",
     of: "من",
     records: "سجل",
-    perPage: "لكل صفحة",
+    perPage: "السجلات لكل صفحة",
+    searchPlaceholder: "بحث...",
     X_wins: "فوز الذكاء الاصطناعي",
     O_wins: "فوز اللاعب",
     draw: "تعادل",
@@ -112,6 +113,7 @@ const mapSessionToRecord = (session) => {
 
 export default function CrossZeroAIResultsPage() {
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { t, dir, language } = useI18nLayout(translations);
   const theme = useTheme();
   const canExport = useHasPermission("crosszero", "export");
@@ -139,7 +141,7 @@ export default function CrossZeroAIResultsPage() {
     },
   };
   const [game, setGame] = useState(null);
-  const [records, setRecords] = useState([]);
+  const [gameId, setGameId] = useState(null);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [uniquePlayers, setUniquePlayers] = useState(0);
@@ -148,6 +150,21 @@ export default function CrossZeroAIResultsPage() {
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
 
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => setPage(1),
+  });
+
+  const { rows: records, setRows: setRecords, loadingMore } = useGameResultsStream({ gameId, getId: (r) => String(r._id) });
+
+  const filteredRecords = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return records;
+    return records.filter((r) =>
+      [r.name, r.company, r.email].filter(Boolean).some((v) => v.toLowerCase().includes(term))
+    );
+  }, [records, searchTerm]);
+
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
@@ -155,14 +172,17 @@ export default function CrossZeroAIResultsPage() {
       const gameData = await getGameBySlug(gameSlug);
       if (gameData && !gameData.error) {
         setGame(gameData);
+        setGameId(gameData._id);
 
-        const history = await getSessionHistory(gameData._id, page, limit);
+        const history = await getSessionHistory(gameData._id);
         if (!history.error) {
           const mappedRecords = (history.sessions || []).map(mapSessionToRecord);
           setRecords(mappedRecords);
           setUniquePlayers(history.uniquePlayers ?? 0);
-          setTotalPages(history.totalPages || 0);
           setTotalRecords(history.totalCount || mappedRecords.length);
+          setTotalPages(
+            history.totalCount ? Math.ceil(history.totalCount / limit) : 0
+          );
         } else {
           setRecords([]);
           setTotalPages(0);
@@ -176,7 +196,12 @@ export default function CrossZeroAIResultsPage() {
     if (gameSlug) {
       fetchResults();
     }
-  }, [gameSlug, page, limit]);
+  }, [gameSlug, limit, setRecords]);
+
+  // Client-side page slice over the accumulated list.
+  const displayRecords = searchTerm.trim() ? filteredRecords : records;
+  const displayTotalRecords = searchTerm.trim() ? filteredRecords.length : totalRecords;
+  const paginatedRecords = displayRecords.slice((page - 1) * limit, page * limit);
 
   const handleExport = async () => {
     if (!game) return;
@@ -185,8 +210,8 @@ export default function CrossZeroAIResultsPage() {
     setExportLoading(false);
   };
 
-  const fromRecord = totalRecords === 0 ? 0 : (page - 1) * limit + 1;
-  const toRecord = totalRecords === 0 ? 0 : Math.min(page * limit, totalRecords);
+  const fromRecord = displayTotalRecords === 0 ? 0 : (page - 1) * limit + 1;
+  const toRecord = displayTotalRecords === 0 ? 0 : Math.min(page * limit, displayTotalRecords);
 
   return (
     <Box
@@ -249,39 +274,24 @@ export default function CrossZeroAIResultsPage() {
             )}
           </Box>
           <Divider sx={{ mt: 2 }} />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mt: 2,
-              gap: 2,
+          <ResultsToolbar
+            dir={dir}
+            showing={
+              <>
+                {t.showing} <strong>{toArabicDigits(fromRecord, language)}</strong>-<strong>{toArabicDigits(toRecord, language)}</strong>{" "}
+                {t.of} <strong>{toArabicDigits(displayTotalRecords, language)}</strong> {t.records}
+              </>
+            }
+            searchTerm={rawSearch}
+            onSearchChange={setRawSearch}
+            perPage={limit}
+            onPerPageChange={(value) => {
+              setLimit(value);
+              setPage(1);
             }}
-          >
-            <Typography variant="body2" sx={{
-              color: "text.secondary"
-            }}>
-              {t.showing} <strong>{toArabicDigits(fromRecord, language)}</strong>-<strong>{toArabicDigits(toRecord, language)}</strong>{" "}
-              {t.of} <strong>{toArabicDigits(totalRecords, language)}</strong> {t.records}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>{t.perPage}</InputLabel>
-              <Select
-                value={limit}
-                label={t.perPage}
-                onChange={(event) => {
-                  setLimit(Number(event.target.value));
-                  setPage(1);
-                }}
-              >
-                {[5, 10, 20, 50].map((value) => (
-                  <MenuItem key={value} value={value}>
-                    {toArabicDigits(value, language)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+            perPageLabel={t.perPage}
+            searchPlaceholder={t.searchPlaceholder}
+          />
         </Box>
 
         {loading ? (
@@ -300,7 +310,7 @@ export default function CrossZeroAIResultsPage() {
                   width: { xs: "100%", sm: "auto" },
                 }
               }}>
-              {records.map((record, index) => {
+              {paginatedRecords.map((record, index) => {
                 const style = RESULT_STYLE[record.result] || RESULT_STYLE.draw;
 
                 return (
@@ -440,6 +450,12 @@ export default function CrossZeroAIResultsPage() {
                 onChange={(_, value) => setPage(value)}
               />
             </Box>
+
+            {loadingMore && (
+              <Box sx={{ textAlign: "center", my: 2 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
           </>
         )}
       </Container>

@@ -65,11 +65,12 @@ export const getParticipantsBySlug = withApiHandler(async (slug) => {
   return data;
 });
 
-// Get participants for CMS (all participants with pagination and winner status)
+// Get participants for CMS — returns the first batch + total; the rest
+// streams in over the spinWheelLoadingProgress socket event.
 export const getParticipantsForCMS = withApiHandler(
-  async (spinWheelId, page = 1, limit = 10) => {
+  async (spinWheelId) => {
     const { data } = await api.get(
-      `/eventwheel/participants/cms/${spinWheelId}?page=${page}&limit=${limit}`
+      `/eventwheel/participants/cms/${spinWheelId}`
     );
     return data;
   }

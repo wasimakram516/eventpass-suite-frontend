@@ -29,11 +29,10 @@ export const getPlayersByGame = withApiHandler(async (gameId) => {
   return data;
 });
 
-// Get paginated TapMatch leaderboard
-export const getLeaderboard = withApiHandler(async (gameId, page = 1, limit = 10) => {
-  const { data } = await api.get(
-    `/tapmatch/player/leaderboard/${gameId}?page=${page}&limit=${limit}`
-  );
+// Get TapMatch leaderboard — returns the first batch + total; the rest
+// streams in over the gameResultsProgress socket event.
+export const getLeaderboard = withApiHandler(async (gameId) => {
+  const { data } = await api.get(`/tapmatch/player/leaderboard/${gameId}`);
   return data;
 });
 

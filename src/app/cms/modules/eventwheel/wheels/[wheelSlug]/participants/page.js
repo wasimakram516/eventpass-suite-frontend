@@ -21,11 +21,7 @@ import {
   DialogActions,
   CircularProgress,
   MenuItem,
-  Pagination,
   Chip,
-  Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import {
@@ -43,10 +39,13 @@ import {
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
+import { mergeRowsById } from "@/utils/gameResultsUtils";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
@@ -84,6 +83,7 @@ const translations = {
     createdAt: "Created At:",
     updatedBy: "Updated:",
     updatedAt: "Updated At:",
+    searchPlaceholder: "Search...",
   },
   ar: {
     participants: "المشاركون",
@@ -112,6 +112,7 @@ const translations = {
     createdAt: "تاريخ الإنشاء:",
     updatedBy: "حدث:",
     updatedAt: "تاريخ التحديث:",
+    searchPlaceholder: "بحث...",
   },
 };
 
@@ -145,8 +146,14 @@ const ParticipantsAdminPage = () => {
     perPage: 10,
   });
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchInitialized, setSearchInitialized] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => {
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    },
+  });
 
   const fetchData = useCallback(async () => {
     if (!slug) return;
@@ -159,15 +166,19 @@ const ParticipantsAdminPage = () => {
       if (!event?._id) return;
       setLoading(true);
       try {
-        const effectiveLimit = searchTerm ? 1000 : limit;
-        const response = await getParticipantsForCMS(
-          event._id,
-          searchTerm ? 1 : page,
-          effectiveLimit,
-        );
+        const response = await getParticipantsForCMS(event._id);
         if (response?.data && response?.pagination) {
           setParticipants(response.data);
-          setPagination(response.pagination);
+          setPagination((prev) => ({
+            ...prev,
+            ...response.pagination,
+            currentPage: page,
+            perPage: limit,
+          }));
+          setLoadingMore(
+            (response.pagination?.loaded ?? 0) <
+              (response.pagination?.totalParticipants ?? 0)
+          );
         }
       } catch (err) {
         console.error("Failed to fetch participants:", err);
@@ -175,24 +186,36 @@ const ParticipantsAdminPage = () => {
         setLoading(false);
       }
     },
-    [event?._id, searchTerm],
+    [event?._id],
   );
+
+  // Accumulate participants streamed in batches over the socket, mirroring
+  // the EventReg registrations loading flow.
+  const handleLoadingProgress = useCallback((data) => {
+    if (!data?.data || data.loaded >= data.total) {
+      setLoadingMore(false);
+      return;
+    }
+    setParticipants((prev) => mergeRowsById(prev, data.data, (p) => String(p._id)));
+  }, []);
 
   const handleUploadProgress = useCallback(
     (data) => {
       if (data.uploaded >= data.total && data.total > 0) {
         setTimeout(() => {
           setUploading(false);
-          fetchParticipants(pagination.currentPage, pagination.perPage);
+          fetchParticipants(1, pagination.perPage);
         }, 1000);
       }
     },
-    [fetchParticipants, pagination.currentPage, pagination.perPage]
+    [fetchParticipants, pagination.perPage]
   );
 
   const { syncProgress, uploadProgress } = useSpinWheelSocket({
     spinWheelId: event?._id,
+    onSyncProgress: undefined,
     onUploadProgress: handleUploadProgress,
+    onLoadingProgress: handleLoadingProgress,
   });
 
   const isSyncComplete =
@@ -205,31 +228,19 @@ const ParticipantsAdminPage = () => {
   }, [slug, fetchData]);
 
   useEffect(() => {
-    if (!searchInitialized) {
-      const param = searchParams.get("search");
-      if (param) {
-        setSearchTerm(param.toLowerCase());
-      }
-      setSearchInitialized(true);
-    }
-  }, [searchInitialized, searchParams]);
-
-  useEffect(() => {
     if (event?._id) {
-      const page = pagination.currentPage;
-      const limit = pagination.perPage;
-      fetchParticipants(page, limit);
+      fetchParticipants(1, pagination.perPage);
     }
-  }, [event?._id, pagination.currentPage, pagination.perPage, fetchParticipants]);
+  }, [event?._id, fetchParticipants]);
 
   useEffect(() => {
     if (syncing && isSyncComplete) {
       setSyncing(false);
       setSyncDialogOpen(false);
       setSelectedScanners([]);
-      fetchParticipants(pagination.currentPage, pagination.perPage);
+      fetchParticipants(1, pagination.perPage);
     }
-  }, [syncing, isSyncComplete, fetchParticipants, pagination.currentPage, pagination.perPage]);
+  }, [syncing, isSyncComplete, fetchParticipants, pagination.perPage]);
 
   const handleUpload = async (e) => {
     if (!event?._id) return;
@@ -355,8 +366,8 @@ const ParticipantsAdminPage = () => {
     setPagination((prev) => ({ ...prev, currentPage: value }));
   };
 
-  const handlePerPageChange = (e) => {
-    const newPerPage = Number(e.target.value);
+  const handlePerPageChange = (value) => {
+    const newPerPage = Number(value);
     setPagination((prev) => ({ ...prev, perPage: newPerPage, currentPage: 1 }));
   };
 
@@ -386,9 +397,9 @@ const ParticipantsAdminPage = () => {
   const currentPage = Math.min(pagination.currentPage, effectiveTotalPages);
 
   const visibleParticipants = useMemo(() => {
-    if (!searchTerm) return participants;
     const start = (currentPage - 1) * perPage;
-    return filteredParticipants.slice(start, start + perPage);
+    const list = searchTerm ? filteredParticipants : participants;
+    return list.slice(start, start + perPage);
   }, [participants, filteredParticipants, searchTerm, currentPage, perPage]);
 
   if (!slug || !event) return <LoadingState />;
@@ -511,25 +522,10 @@ const ParticipantsAdminPage = () => {
         <Divider sx={{ my: 2 }} />
 
         {/* Search, Filter, and Info Toolbar */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "flex-start", md: "center" },
-            gap: 2,
-            mb: 3,
-            px: { xs: 1, sm: 2 }
-          }}>
-          {/* Left: Record info */}
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: { xs: "100%", md: "50%" }
-            }}>
-            <Typography variant="body2" sx={{
-              color: "text.secondary"
-            }}>
+        <ResultsToolbar
+          dir={dir}
+          showing={
+            <>
               {t.showing}{" "}
               {effectiveTotal === 0
                 ? toArabicDigits(0, language)
@@ -540,38 +536,16 @@ const ParticipantsAdminPage = () => {
                 effectiveTotal,
               ), language)}{" "}
               {t.of} {toArabicDigits(effectiveTotal, language)}
-            </Typography>
-          </Box>
-
-          {/* Right: Records per page */}
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-              width: { xs: "100%", md: "auto" },
-            }}
-          >
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: { xs: "100%", sm: 150 },
-              }}
-            >
-              <InputLabel>{t.recordsPerPage}</InputLabel>
-              <Select
-                value={pagination.perPage}
-                onChange={handlePerPageChange}
-                label={t.recordsPerPage}
-              >
-                {[5, 10, 20, 50, 100, 250, 500].map((n) => (
-                  <MenuItem key={n} value={n}>
-                    {toArabicDigits(n, language)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Stack>
-        </Box>
+            </>
+          }
+          searchTerm={rawSearch}
+          onSearchChange={setRawSearch}
+          perPage={pagination.perPage}
+          onPerPageChange={handlePerPageChange}
+          perPageLabel={t.recordsPerPage}
+          searchPlaceholder={t.searchPlaceholder}
+          renderCount={(n) => toArabicDigits(n, language)}
+        />
 
         <Box sx={{ py: 2 }}>
           {loading ? (
@@ -690,6 +664,12 @@ const ParticipantsAdminPage = () => {
                 page={currentPage}
                 onChange={handlePageChange}
               />
+            </Box>
+          )}
+
+          {loadingMore && (
+            <Box sx={{ textAlign: "center", my: 2 }}>
+              <CircularProgress size={20} />
             </Box>
           )}
         </Box>

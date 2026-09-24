@@ -13,14 +13,11 @@ import {
   Divider,
   Grid,
   Pagination,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import ArabicPagination from "@/components/ArabicPagination";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 import ICONS from "@/utils/iconUtil";
@@ -31,6 +28,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -63,6 +61,7 @@ const translations = {
     to: "to",
     of: "of",
     records: "sessions",
+    searchPlaceholder: "Search...",
     totalPlayers: "Total Players (unique):",
     playOf: "Play {n} of {m}",
     exportResults: "Export Results",
@@ -99,6 +98,7 @@ const translations = {
     to: "إلى",
     of: "من",
     records: "جلسات",
+    searchPlaceholder: "بحث...",
     totalPlayers: "إجمالي اللاعبين (فريد):",
     playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
@@ -127,6 +127,8 @@ function sessionMatchesSearch(session, term) {
   return haystack.includes(t);
 }
 
+import { useGameResultsStream } from "@/hooks/useGameResultsSocket";
+
 export default function PvPSessions() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
@@ -135,7 +137,7 @@ export default function PvPSessions() {
   const cz = theme.palette.crosszero;
   const canReset = useHasPermission("eventduel", "delete");
   const canExport = useHasPermission("eventduel", "export");
-  const [sessions, setSessions] = useState([]);
+  const [gameId, setGameId] = useState(null);
   const [totalSessions, setTotalSessions] = useState(0);
   const [uniquePlayers, setUniquePlayers] = useState(0);
   const [page, setPage] = useState(1);
@@ -143,19 +145,13 @@ export default function PvPSessions() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchInitialized, setSearchInitialized] = useState(false);
 
-  useEffect(() => {
-    if (!searchInitialized) {
-      const param = searchParams.get("search");
-      if (param) {
-        setSearchTerm(param.trim());
-        setPage(1);
-      }
-      setSearchInitialized(true);
-    }
-  }, [searchInitialized, searchParams]);
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => setPage(1),
+  });
+
+  const { rows: sessions, setRows: setSessions, loadingMore } = useGameResultsStream({ gameId, getId: (s) => String(s._id) });
 
   const filteredSessions = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -166,25 +162,22 @@ export default function PvPSessions() {
   const useSearchMode = Boolean(searchTerm.trim());
   const displaySessions = useSearchMode ? filteredSessions : sessions;
   const displayTotal = useSearchMode ? filteredSessions.length : totalSessions;
-  const paginatedSessions = useSearchMode
-    ? filteredSessions.slice((page - 1) * limit, page * limit)
-    : sessions;
+  const paginatedSessions = displaySessions.slice((page - 1) * limit, page * limit);
 
   useEffect(() => {
     const fetchSessions = async () => {
       setLoading(true);
-      const fetchLimit = searchTerm.trim() ? 200 : limit;
-      const fetchPage = searchTerm.trim() ? 1 : page;
-      const res = await getAllSessions(gameSlug, fetchPage, fetchLimit);
+      const res = await getAllSessions(gameSlug);
       if (!res.error) {
         setSessions(res.sessions || []);
+        setGameId(res.sessions?.[0]?.gameId?._id || null);
         setUniquePlayers(res.uniquePlayers ?? 0);
         setTotalSessions(res.totalCount ?? 0);
       }
       setLoading(false);
     };
     if (gameSlug) fetchSessions();
-  }, [gameSlug, page, limit, searchTerm]);
+  }, [gameSlug, setSessions]);
 
   const handleResetSessions = async () => {
     if (sessions.length === 0) return setShowConfirm(false);
@@ -285,38 +278,25 @@ export default function PvPSessions() {
         </Box>
         <Divider sx={{ my: 2 }} />
       </Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-          px: 2
-        }}>
-        <Typography>
-          {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}-
-          {toArabicDigits(Math.min(page * limit, displayTotal), language)} {t.of} {toArabicDigits(displayTotal, language)}{" "}
-          {t.records}
-        </Typography>
-        <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
-          <InputLabel>{t.recordsPerPage}</InputLabel>
-          <Select
-            value={limit}
-            onChange={(e) => {
-              setLimit(Number(e.target.value));
-              setPage(1);
-            }}
-            label={t.recordsPerPage}
-            sx={{ pr: dir === "rtl" ? 1 : undefined }}
-          >
-            {[5, 10, 20].map((n) => (
-              <MenuItem key={n} value={n}>
-                {toArabicDigits(n, language)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      <ResultsToolbar
+        dir={dir}
+        showing={
+          <>
+            {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}-
+            {toArabicDigits(Math.min(page * limit, displayTotal), language)} {t.of} {toArabicDigits(displayTotal, language)}{" "}
+            {t.records}
+          </>
+        }
+        searchTerm={rawSearch}
+        onSearchChange={setRawSearch}
+        perPage={limit}
+        onPerPageChange={(value) => {
+          setLimit(value);
+          setPage(1);
+        }}
+        perPageLabel={t.recordsPerPage}
+        searchPlaceholder={t.searchPlaceholder}
+      />
       {loading ? (
         <LoadingState />
       ) : (
@@ -1017,6 +997,12 @@ export default function PvPSessions() {
                     onChange={(_, value) => setPage(value)}
                   />
                 </Box>
+
+                {loadingMore && (
+                  <Box sx={{ textAlign: "center", my: 2 }}>
+                    <CircularProgress size={20} />
+                  </Box>
+                )}
               </>
             ) : (
               <NoDataAvailable />

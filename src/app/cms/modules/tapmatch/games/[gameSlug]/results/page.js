@@ -10,10 +10,6 @@ import {
   Tooltip,
   Divider,
   Pagination,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import {
@@ -27,9 +23,12 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { useGameResultsStream } from "@/hooks/useGameResultsSocket";
 import { getGameBySlug } from "@/services/tapmatch/gameService";
 import {
   getLeaderboard,
@@ -58,7 +57,8 @@ const translations = {
     showing: "Showing",
     of: "of",
     records: "records",
-    perPage: "Per page",
+    perPage: "Records per page",
+    searchPlaceholder: "Search...",
   },
   ar: {
     resultsTitle: "نتائج",
@@ -77,7 +77,8 @@ const translations = {
     showing: "عرض",
     of: "من",
     records: "سجل",
-    perPage: "لكل صفحة",
+    perPage: "السجلات لكل صفحة",
+    searchPlaceholder: "بحث...",
   },
 };
 
@@ -109,28 +110,27 @@ export default function TapMatchResultsPage() {
   const { t, dir, language } = useI18nLayout(translations);
   const canExport = useHasPermission("tapmatch", "export");
   const [game, setGame] = useState(null);
-  const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchInitialized, setSearchInitialized] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
   const [uniquePlayers, setUniquePlayers] = useState(0);
+  const [gameId, setGameId] = useState(null);
 
-  useEffect(() => {
-    if (!searchInitialized) {
-      const param = searchParams.get("search");
-      if (param) {
-        setSearchTerm(param.trim());
-        setPage(1);
-      }
-      setSearchInitialized(true);
-    }
-  }, [searchInitialized, searchParams]);
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => setPage(1),
+  });
+
+  // Accumulate streamed batches (and stale-guard against a reset) into the
+  // existing list, then let the "load more" indicator follow the stream.
+  const { rows: players, setRows: setPlayers, loadingMore } = useGameResultsStream({
+    gameId,
+    getId: (row) => String(row.sessionId || row._id),
+  });
 
   const filteredPlayers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -153,20 +153,13 @@ export default function TapMatchResultsPage() {
         const gameData = await getGameBySlug(gameSlug);
         if (gameData) {
           setGame(gameData);
-          if (searchTerm.trim()) {
-            const leaderboard = await getLeaderboard(gameData._id, 1, 1000);
-            const rows = leaderboard.results || [];
-            setPlayers(rows);
-            setUniquePlayers(leaderboard.uniquePlayers ?? countUniquePlayers(rows));
-            setTotalPages(1);
-            setTotalRecords(rows.length);
-          } else {
-            const leaderboard = await getLeaderboard(gameData._id, page, limit);
-            setPlayers(leaderboard.results || []);
-            setUniquePlayers(leaderboard.uniquePlayers ?? 0);
-            setTotalPages(leaderboard.totalPages || 0);
-            setTotalRecords(leaderboard.total || 0);
-          }
+          setGameId(gameData._id);
+          const leaderboard = await getLeaderboard(gameData._id);
+          const rows = leaderboard.results || [];
+          setPlayers(rows);
+          setUniquePlayers(leaderboard.uniquePlayers ?? countUniquePlayers(rows));
+          setTotalPages(leaderboard.total ? Math.ceil(leaderboard.total / limit) : 0);
+          setTotalRecords(leaderboard.total || rows.length);
         }
       } catch (err) {
         showMessage(t.errorLoading, "error");
@@ -175,7 +168,7 @@ export default function TapMatchResultsPage() {
       }
     };
     if (gameSlug) fetchGameAndResults();
-  }, [gameSlug, page, limit, searchTerm]);
+  }, [gameSlug, limit]);
 
   const handleExport = async () => {
     if (!game) return;
@@ -261,43 +254,25 @@ export default function TapMatchResultsPage() {
           </Box>
 
           <Divider sx={{ mt: 2 }} />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              mt: 2,
-              gap: 2,
+          <ResultsToolbar
+            dir={dir}
+            showing={
+              <>
+                {t.showing} <strong>{fromRecord}</strong>–
+                <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
+                {t.records}
+              </>
+            }
+            searchTerm={rawSearch}
+            onSearchChange={setRawSearch}
+            perPage={limit}
+            onPerPageChange={(value) => {
+              setLimit(value);
+              setPage(1);
             }}
-          >
-            {/* Record range info */}
-            <Typography variant="body2" sx={{
-              color: "text.secondary"
-            }}>
-              {t.showing} <strong>{fromRecord}</strong>–
-              <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
-              {t.records}
-            </Typography>
-            {/* Per page selector */}
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t.perPage}</InputLabel>
-              <Select
-                value={limit}
-                label={t.perPage}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
-                {[5, 10, 15, 20, 50].map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {opt}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+            perPageLabel={t.perPage}
+            searchPlaceholder={t.searchPlaceholder}
+          />
         </Box>
 
         {/* Loading / Data Section */}
@@ -457,6 +432,12 @@ export default function TapMatchResultsPage() {
                 onChange={(e, val) => setPage(val)}
               />
             </Box>
+
+            {loadingMore && (
+              <Box sx={{ textAlign: "center", my: 2 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
           </>
         )}
       </Container>

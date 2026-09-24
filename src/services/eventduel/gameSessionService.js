@@ -2,10 +2,11 @@ import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 import { getExportFilename } from "@/utils/exportFilename";
 
-// Get all sessions
-export const getAllSessions = withApiHandler(async (gameSlug, page = 1, limit = 5) => {
+// Get all sessions — returns the first batch + total; the rest streams in
+// over the gameResultsProgress socket event.
+export const getAllSessions = withApiHandler(async (gameSlug) => {
   const { data } = await api.get("/eventduel/sessions", {
-    params: { gameSlug, page, limit },
+    params: { gameSlug },
   });
   return data;
 });

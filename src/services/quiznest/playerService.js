@@ -33,7 +33,8 @@ export const getPlayersByGame = withApiHandler(async (gameId) => {
   return data;
 });
 
-// Get leaderboard for a game
+// Get leaderboard for a game — returns the first batch + total; the rest
+// streams in over the gameResultsProgress socket event.
 export const getLeaderboard = withApiHandler(async (gameId) => {
   const { data } = await api.get(`/quiznest/players/leaderboard/${gameId}`);
   return data;

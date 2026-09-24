@@ -12,8 +12,8 @@ export const submitResult = withApiHandler(async (sessionId, playerId, payload) 
   return data;
 });
 
-export const getSessionHistory = withApiHandler(async (gameId, page = 1, limit = 10) => {
-  const { data } = await api.get(`/crosszero/player/history/${gameId}`, { params: { page, limit } });
+export const getSessionHistory = withApiHandler(async (gameId) => {
+  const { data } = await api.get(`/crosszero/player/history/${gameId}`);
   return data;
 });
 
