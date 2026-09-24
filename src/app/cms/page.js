@@ -22,7 +22,6 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
@@ -36,17 +35,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useTheme, alpha } from "@mui/material/styles";
 import {
   getDashboardInsights,
   refreshDashboardInsights,
 } from "@/services/dashboardService";
 import LoadingState from "@/components/LoadingState";
-import { wrapTextBox } from "@/utils/wrapTextStyles";
-import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
-import { resolveModuleColor } from "@/styles/theme";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
@@ -56,7 +52,10 @@ import useDashboardSocket from "@/hooks/useDashboardSocket";
 import { useModules, useModuleCategories } from "@/hooks/useModules";
 import { groupByModuleCategory, getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
 import AppCard from "@/components/cards/AppCard";
-import { PieChart } from "@mui/x-charts";
+import ModuleCard from "@/components/modules/ModuleCard";
+import { getModuleWorkingRoute } from "@/utils/moduleWorkingRoutes";
+import DonutStat from "../../components/chart/DonutStat";
+import { buildDonutData } from "@/utils/charts";
 
 const translations = {
   en: {
@@ -81,6 +80,7 @@ const translations = {
     allCategories: "All categories",
     coreModule: "Core Module",
     openModule: "Open",
+    paymentDashboard: "Payment Dashboard",
     noPermission: "You currently do not have access to any modules.",
     contactSupport: "Please contact support to request access:",
   },
@@ -106,6 +106,7 @@ const translations = {
     allCategories: "كل الفئات",
     coreModule: "الوحدة الأساسية",
     openModule: "فتح",
+    paymentDashboard: "لوحة المدفوعات",
     noPermission: "ليس لديك إذن للوصول إلى أي وحدات حالياً.",
     contactSupport: "يرجى الاتصال بالدعم لطلب الوصول:",
   },
@@ -124,32 +125,32 @@ function getCategoryIconComponent(categoryId) {
   return CATEGORY_ICON_MAP[meta?.iconName] || CategoryOutlinedIcon;
 }
 
-const buildDonutData = (data = [], emptyLabel = "Empty", donutColors = [], donutEmpty = "#e0e0e0") => {
-  const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
-  if (total === 0) {
-    return {
-      data: [
-        {
-          id: 0,
-          label: emptyLabel,
-          value: 1,
-          color: donutEmpty,
-          isEmpty: true,
-        },
-      ],
-      total: 0,
-    };
-  }
-  return {
-    data: data.map((item, idx) => ({
-      id: idx,
-      label: item.name,
-      ...item,
-      color: donutColors.length ? donutColors[idx % donutColors.length] : undefined,
-    })),
-    total,
-  };
-};
+// export const buildDonutData = (data = [], emptyLabel = "Empty", donutColors = [], donutEmpty = "#e0e0e0") => {
+//   const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+//   if (total === 0) {
+//     return {
+//       data: [
+//         {
+//           id: 0,
+//           label: emptyLabel,
+//           value: 1,
+//           color: donutEmpty,
+//           isEmpty: true,
+//         },
+//       ],
+//       total: 0,
+//     };
+//   }
+//   return {
+//     data: data.map((item, idx) => ({
+//       id: idx,
+//       label: item.name,
+//       ...item,
+//       color: donutColors.length ? donutColors[idx % donutColors.length] : undefined,
+//     })),
+//     total,
+//   };
+// };
 
 const Clock = React.memo(function Clock({ language, align, color }) {
   const [now, setNow] = useState(new Date());
@@ -186,269 +187,146 @@ const Clock = React.memo(function Clock({ language, align, color }) {
   );
 });
 
-const DonutStat = React.memo(function DonutStat({ data, centerLabel, height = 180, animateCharts = false }) {
-  const isEmpty = data.length === 1 && data[0]?.isEmpty;
+const dashboardStatCardSx = {
+  p: 2.5,
+  height: "100%",
+  width: "100%",
+  textAlign: "center",
+  overflow: "hidden",
+  borderRadius: "14px",
+  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+  borderInlineStart: (theme) => `6px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.common.black, theme.palette.mode === "dark" ? 0.18 : 0.05)}`,
+  transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
+  "&:hover": {
+    borderColor: (theme) => alpha(theme.palette.primary.main, 0.4),
+    transform: "translateY(-2px)",
+    boxShadow: (theme) => `0 10px 22px ${alpha(theme.palette.primary.main, 0.12)}`,
+  },
+};
+
+const DashboardStatPreview = React.memo(function DashboardStatPreview({
+  data,
+  total,
+  language,
+  animateCharts,
+  legend = [],
+}) {
+  const theme = useTheme();
+  const primary = theme.palette.primary.main;
+  const visibleLegend = legend.filter((item) => !item.isEmpty).slice(0, 5);
+  const hiddenLegend = legend.filter((item) => !item.isEmpty).slice(5);
+  const hasLegend = visibleLegend.length > 0;
+
   return (
     <Box
       sx={{
-        position: "relative",
-        width: "100%",
-        height,
-        minWidth: 180,
+        mt: 1.5,
+        p: 1.5,
+        borderRadius: "12px",
+        bgcolor: alpha(primary, 0.04),
+        border: `1px solid ${alpha(primary, 0.1)}`,
+        display: "grid",
+        alignItems: "center",
+        gridTemplateColumns: hasLegend ? "112px minmax(0, 1fr)" : "1fr",
+        columnGap: hasLegend ? 1.5 : 0,
       }}
     >
-      <PieChart
-        height={height}
-        skipAnimation={!animateCharts}
-        series={[
-          {
-            data,
-            innerRadius: 50,
-            outerRadius: 70,
-            paddingAngle: 2,
-            arcLabel: () => "",
-          },
-        ]}
-        slotProps={{
-          legend: { hidden: true, sx: { display: "none !important" } },
-          tooltip: { trigger: isEmpty ? "none" : "item" },
-        }}
-      />
-      <Typography
-        variant="h6"
-        sx={{
-          fontWeight: "bold",
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          whiteSpace: "nowrap",
-        }}>
-        {centerLabel}
-      </Typography>
+      <Box sx={{ display: "grid", placeItems: "center" }}>
+        <DonutStat
+          data={data}
+          width={hasLegend ? 112 : 152}
+          height={hasLegend ? 112 : 152}
+          minWidth={0}
+          innerRadius={hasLegend ? 34 : 44}
+          outerRadius={hasLegend ? 48 : 64}
+          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          centerLabel={toArabicDigits(total, language)}
+          centerLabelSx={{ fontSize: "1.2rem", fontVariantNumeric: "tabular-nums" }}
+          animateCharts={animateCharts}
+        />
+      </Box>
+
+      {hasLegend && (
+        <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+          {visibleLegend.map((item) => {
+            const share = total ? Number(item.value || 0) / total : 0;
+            return (
+              <Box key={item.name} sx={{ minWidth: 0, px: 1, py: 0.5, mx: -1, borderRadius: 1.5 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color || primary, flexShrink: 0 }} />
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                    {item.name}
+                  </Typography>
+                  <Typography variant="caption" fontWeight={700} sx={{ fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                    {toArabicDigits(item.value, language)}
+                  </Typography>
+                </Stack>
+                <Box sx={{ mt: 0.5, marginInlineStart: 2, height: 3, borderRadius: 2, bgcolor: alpha(primary, 0.1), overflow: "hidden" }}>
+                  <Box sx={{ width: `${share * 100}%`, minWidth: share > 0 ? 4 : 0, height: "100%", bgcolor: item.color || primary, borderRadius: 2 }} />
+                </Box>
+              </Box>
+            );
+          })}
+          {hiddenLegend.length > 0 && (
+            <Tooltip
+              arrow
+              title={hiddenLegend.map((item) => `${item.name}: ${toArabicDigits(item.value, language)}`).join("\n")}
+            >
+              <Typography variant="caption" fontWeight={700} sx={{ color: "primary.main", width: "fit-content" }}>
+                +{toArabicDigits(hiddenLegend.length, language)}
+              </Typography>
+            </Tooltip>
+          )}
+        </Stack>
+      )}
     </Box>
   );
 });
 
-const RenderTruncatedChip = React.memo(function RenderTruncatedChip({ label }) {
-  return (
-    <Tooltip title={label}>
-      <Chip
-        label={label}
-        size="small"
-        variant="outlined"
-        sx={{
-          maxWidth: 140,
-          "& .MuiChip-label": {
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          },
-        }}
-      />
-    </Tooltip>
-  );
-});
-
-const DashboardModuleCard = React.memo(function DashboardModuleCard({
-  mod,
-  stats,
-  language,
-  t,
-  themeMode,
-  donutColors,
-  donutEmpty,
-  animateCharts,
-  dir,
-  onOpenModule,
-}) {
-  const totals = stats?.totals || {};
-  const trash = stats?.trash || {};
-  const totalEntries = Object.entries(totals);
-  const trashEntries = Object.entries(trash);
-  const totalsDonutInput = totalEntries.map(([k, v]) => ({
-    name: k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
-    value: Number(v || 0),
-  }));
-  const { data: donutData, total: donutTotal } = buildDonutData(
-    totalsDonutInput,
-    t.noTotals,
-    donutColors,
-    donutEmpty,
-  );
-  const modColor =
-    resolveModuleColor(mod.color, themeMode) ||
-    "#1976d2";
-  const categoryLabel = getCategoryLabel(mod.category, language);
-
-  return (
-    <AppCard
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        width: { xs: "100%", sm: 350 },
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        ...wrapTextBox,
-      }}
-    >
-      <Box sx={{ ...wrapTextBox }}>
-        {/* Header row: Icon + Title + Category Chip */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 1,
-            mb: 1,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-            {getModuleIcon(mod.icon, {
-              sx: { fontSize: 36, color: modColor, flexShrink: 0 },
-            })}
-            <Typography
-              variant="h6"
-              sx={{
-                color: modColor,
-                fontWeight: "bold",
-                ...wrapTextBox,
-              }}
-            >
-              {mod.labels?.[language] ||
-                mod.labels?.en ||
-                mod.key}
-            </Typography>
-          </Box>
-          {categoryLabel && (
-            <Chip
-              size="small"
-              label={categoryLabel}
-              variant="outlined"
-              sx={{ fontSize: "0.75rem", height: 24 }}
-            />
-          )}
-        </Box>
-
-        <Typography
-          variant="body2"
-          gutterBottom
-          sx={{
-            color: "text.secondary",
-            ...wrapTextBox,
-            minHeight: 44,
-          }}
-        >
-          {mod.descriptions?.[language] || mod.descriptions?.en}
-        </Typography>
-        <Box sx={{ mt: 2 }}>
-          <DonutStat
-            data={donutData}
-            centerLabel={toArabicDigits(donutTotal, language)}
-            height={160}
-            animateCharts={animateCharts}
-          />
-        </Box>
-      </Box>
-      <Box>
-        <Divider sx={{ my: 2 }} />
-
-        {/* Totals */}
-        {totalEntries.length > 0 ? (
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              flexWrap: "wrap",
-              gap: 0.5,
-            }}
-          >
-            {totalEntries.map(([k, v]) => (
-              <RenderTruncatedChip
-                key={k}
-                label={toArabicDigits(
-                  `${k
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (c) => c.toUpperCase())}: ${v}`,
-                  language,
-                )}
-              />
-            ))}
-          </Stack>
-        ) : (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-            }}
-          >
-            {t.noTotals}
-          </Typography>
-        )}
-
-        {/* Trash */}
-        {trashEntries.length > 0 && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            {/* Trash title row */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1,
-                mb: 1,
-              }}
-            >
-              <ICONS.delete fontSize="small" color="error" />
-              <Typography variant="subtitle2" gutterBottom>
-                {t.trash}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 1,
-                justifyContent: "flex-start",
-              }}
-            >
-              {trashEntries.map(([k, v]) => (
-                <RenderTruncatedChip
-                  key={k}
-                  label={toArabicDigits(
-                    `${k
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (c) => c.toUpperCase())}: ${v}`,
-                    language,
-                  )}
-                />
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* Open Action */}
-        {mod.route && (
-          <Button
-            size="small"
-            onClick={() => onOpenModule(mod.route)}
-            sx={{
-              textTransform: "none",
-              mt: 2,
-              fontWeight: 600,
-              alignSelf: "flex-start",
-              ...getStartIconSpacing(dir),
-            }}
-            endIcon={<ArrowForwardOutlinedIcon fontSize="small" />}
-          >
-            {mod.buttons?.[language] || mod.buttons?.en || t.openModule}
-          </Button>
-        )}
-      </Box>
-    </AppCard>
-  );
-});
+// export const DonutStat = React.memo(function DonutStat({ data, centerLabel, height = 180, animateCharts = false }) {
+//   const isEmpty = data.length === 1 && data[0]?.isEmpty;
+//   return (
+//     <Box
+//       sx={{
+//         position: "relative",
+//         width: "100%",
+//         height,
+//         minWidth: 180,
+//       }}
+//     >
+//       <PieChart
+//         height={height}
+//         skipAnimation={!animateCharts}
+//         series={[
+//           {
+//             data,
+//             innerRadius: 50,
+//             outerRadius: 70,
+//             paddingAngle: 2,
+//             arcLabel: () => "",
+//           },
+//         ]}
+//         slotProps={{
+//           legend: { hidden: true, sx: { display: "none !important" } },
+//           tooltip: { trigger: isEmpty ? "none" : "item" },
+//         }}
+//       />
+//       <Typography
+//         variant="h6"
+//         sx={{
+//           fontWeight: "bold",
+//           position: "absolute",
+//           top: "50%",
+//           left: "50%",
+//           transform: "translate(-50%, -50%)",
+//           whiteSpace: "nowrap",
+//         }}>
+//         {centerLabel}
+//       </Typography>
+//     </Box>
+//   );
+// });
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -587,9 +465,31 @@ export default function HomePage() {
     }
   };
 
-  const handleOpenModule = useCallback((route) => {
-    if (route) router.push(route);
-  }, [router]);
+      const renderModuleCard = (mod) => {
+    const key = String(mod.key || "");
+    const stats = moduleStats[key] ?? moduleStats[key.toLowerCase()] ?? {};
+
+    return (
+      <ModuleCard
+        key={mod.key}
+        module={mod}
+        language={language}
+        categoryLabel={getCategoryLabel(mod.category, language)}
+        stats={stats}
+        statsLabels={{ noTotals: t.noTotals, trash: t.trash }}
+        animateCharts={animateCharts}
+        primaryAction={getModuleWorkingRoute(mod) ? {
+          label: mod.buttons?.[language] || mod.buttons?.en || t.openModule,
+          href: getModuleWorkingRoute(mod),
+        } : undefined}
+        secondaryAction={key.toLowerCase() === "checkout" ? {
+          label: t.paymentDashboard,
+          href: "/cms/modules/checkout/payments",
+        } : undefined}
+        // stackActions={key.toLowerCase() === "checkout"}
+      />
+    );
+  };
 
   const { modules: moduleStats = {} } = insights || {};
   const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
@@ -849,7 +749,12 @@ export default function HomePage() {
                       value: Number(business.count || 0),
                     })),
                     t.noTotals,
+                    donutColors,
+                    donutEmpty,
                   );
+                  const eventLegend = [...eventsDonut]
+                    .filter((item) => !item.isEmpty)
+                    .sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
 
                   return (
                     <Grid
@@ -865,38 +770,18 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.users}
                           </Typography>
-                          <DonutStat
+                          <DashboardStatPreview
                             data={usersDonut}
-                            centerLabel={toArabicDigits(usersTotal, language)}
-                            height={200}
+                            total={usersTotal}
+                            language={language}
                             animateCharts={animateCharts}
+                            legend={usersDonut}
                           />
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{
-                              flexWrap: "wrap",
-                              justifyContent: "center",
-                              mt: 1,
-                            }}>
-                            {roleKeys.map((role) => (
-                              <RenderTruncatedChip
-                                key={role}
-                                label={toArabicDigits(`${roleLabel(role)}: ${Number(userTotals?.[role] || 0)
-                                  }`, language)}
-                              />
-                            ))}
-                          </Stack>
                         </AppCard>
                       </Grid>
                       <Grid
@@ -905,20 +790,15 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.businesses}
                           </Typography>
-                          <DonutStat
+                          <DashboardStatPreview
                             data={businessesDonut.data}
-                            centerLabel={toArabicDigits(businessesDonut.total, language)}
-                            height={200}
+                            total={businessesDonut.total}
+                            language={language}
                             animateCharts={animateCharts}
                           />
                         </AppCard>
@@ -929,21 +809,17 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.totalEvents}
                           </Typography>
-                          <DonutStat
+                          <DashboardStatPreview
                             data={eventsDonut}
-                            centerLabel={toArabicDigits(eventsTotal, language)}
-                            height={200}
+                            total={eventsTotal}
+                            language={language}
                             animateCharts={animateCharts}
+                            legend={eventLegend}
                           />
                           <Button
                             variant="outlined"
@@ -953,6 +829,9 @@ export default function HomePage() {
                               mt: 1,
                               width: "50%",
                               alignSelf: "center",
+                              textTransform: "none",
+                              fontWeight: 700,
+                              borderRadius: 2,
                             }}
                           >
                             {t.viewDetails}
@@ -1040,27 +919,13 @@ export default function HomePage() {
                       <Chip size="small" label="1" color="primary" variant="outlined" />
                     </Box>
                     <Divider sx={{ mb: 3 }} />
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 3,
-                        justifyContent: "center",
-                      }}
-                    >
-                      <DashboardModuleCard
+                    <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3 }}>
+                      <Box
                         key={coreModule.key}
-                        mod={coreModule}
-                        stats={moduleStats[coreModule.key]}
-                        language={language}
-                        t={t}
-                        themeMode={theme.palette.mode}
-                        donutColors={donutColors}
-                        donutEmpty={donutEmpty}
-                        animateCharts={animateCharts}
-                        dir={dir}
-                        onOpenModule={handleOpenModule}
-                      />
+                        sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: "calc(50% - 12px)" } }}
+                      >
+                        {renderModuleCard(coreModule)}
+                      </Box>
                     </Box>
                   </Box>
                 )}
@@ -1074,6 +939,8 @@ export default function HomePage() {
                     coreModule &&
                     coreModule.category?.id === group.category.id &&
                     (!selectedCategoryId || selectedCategoryId === group.category.id);
+                  const categoryModuleCount = group.items.length + (isCoreInCategory ? 1 : 0);
+                  const isSingleModuleCategory = categoryModuleCount === 1;
 
                   return (
                     <Box key={group.category.id} sx={{ mb: 6 }}>
@@ -1119,44 +986,22 @@ export default function HomePage() {
                         />
                       </Box>
                       <Divider sx={{ mb: 3 }} />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 3,
-                          justifyContent: "center",
-                        }}
-                      >
+                      <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3 }}>
                         {isCoreInCategory && (
-                          <DashboardModuleCard
+                          <Box
                             key={coreModule.key}
-                            mod={coreModule}
-                            stats={moduleStats[coreModule.key]}
-                            language={language}
-                            t={t}
-                            themeMode={theme.palette.mode}
-                            donutColors={donutColors}
-                            donutEmpty={donutEmpty}
-                            animateCharts={animateCharts}
-                            dir={dir}
-                            onOpenModule={handleOpenModule}
-                          />
+                            sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: isSingleModuleCategory ? "100%" : "calc(50% - 12px)" } }}
+                          >
+                            {renderModuleCard(coreModule)}
+                          </Box>
                         )}
                         {group.items.map((mod) => (
-                          <DashboardModuleCard
+                          <Box
                             key={mod.key}
-                            mod={mod}
-                            stats={moduleStats[mod.key]}
-                            language={language}
-                            t={t}
-                            themeMode={theme.palette.mode}
-                            donutColors={donutColors}
-                            donutEmpty={donutEmpty}
-                            animateCharts={animateCharts}
-                            dir={dir}
-                            onOpenModule={handleOpenModule}
-                          />
+                            sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: isSingleModuleCategory ? "100%" : "calc(50% - 12px)" } }}
+                          >
+                            {renderModuleCard(mod)}
+                          </Box>
                         ))}
                       </Box>
                     </Box>

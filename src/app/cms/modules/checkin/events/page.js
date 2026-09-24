@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import EventFormModal from "@/components/modals/EventModal";
@@ -30,6 +31,7 @@ import {
   cloneCheckInEvent,
 } from "@/services/checkin/checkinEventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
@@ -256,7 +258,7 @@ export default function EventsPage() {
 
   return (
     <Box dir={dir}>
-      {(user?.role === "admin" || user?.role === "superadmin") && (
+            {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -269,40 +271,17 @@ export default function EventsPage() {
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              mt: 2,
-              mb: 1,
-              gap: 2,
-              flexWrap: "wrap",
-            }}
-          >
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" sx={{
-                fontWeight: "bold"
-              }}>
-                {t.pageTitle}
-              </Typography>
-              <Typography variant="body2" sx={{
-                color: "text.secondary"
-              }}>
-                {t.pageDescription}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                gap: 1,
-                width: { xs: "100%", sm: "auto" },
-              }}
-            >
-              {(user?.role === "admin" || user?.role === "superadmin") && (
+          <ModuleWorkingHeader
+            title={t.pageTitle}
+            description={t.pageDescription}
+            actions={(
+              <>
+              {searchTerm && (
+                <Button variant="outlined" onClick={handleShowAllEvents}>
+                  {t.showAllEvents}
+                </Button>
+              )}
+              {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
@@ -322,14 +301,17 @@ export default function EventsPage() {
                   {t.createEvent}
                 </Button>
               )}
-            </Box>
-          </Box>
+              </>
+            )}
+          />
 
           <Divider sx={{ mt: 2 }} />
         </Box>
 
         {!selectedBusiness ? (
-          <EmptyBusinessState />
+          user?.role === "admin" || user?.role === "superadmin" ? (
+            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
+          ) : <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />

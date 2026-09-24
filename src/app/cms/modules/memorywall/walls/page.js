@@ -10,6 +10,7 @@ import {
 } from "@/services/memorywall/wallConfigService";
 import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import {
   Box,
   Button,
@@ -35,6 +36,7 @@ import { getAllBusinesses } from "@/services/businessService";
 import { useAuth } from "@/contexts/AuthContext";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
@@ -284,42 +286,12 @@ export default function WallConfigsPage() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-      {/* Header Section */}
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{
-          justifyContent: "space-between",
-          alignItems: { xs: "stretch", sm: "center" },
-          my: 3
-        }}>
-        <Box>
-          <Typography variant="h4" sx={{
-            fontWeight: "bold"
-          }}>
-            {t.wallConfigurations}
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-              mt: 0.5
-            }}>
-            {selectedBusiness
-              ? `${t.manageDisplayWalls} ${selectedBusinessObject?.name}`
-              : t.selectBusinessToView}
-          </Typography>
-        </Box>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          sx={{
-            justifyContent: "space-between",
-            alignItems: { xs: "stretch", sm: "center" },
-            gap: dir === "rtl" ? 2 : 1,
-            my: 3
-          }}>
-          {(user?.role === "admin" || user?.role === "superadmin") && (
+      <ModuleWorkingHeader
+        title={t.wallConfigurations}
+        description={selectedBusiness ? `${t.manageDisplayWalls} ${selectedBusinessObject?.name}` : t.selectBusinessToView}
+        actions={(
+          <>
+          {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"
               onClick={() => setDrawerOpen(true)}
@@ -339,13 +311,16 @@ export default function WallConfigsPage() {
               {t.newWallConfig}
             </Button>
           )}
-        </Stack>
-      </Stack>
+          </>
+        )}
+      />
       {/* Divider */}
       <Divider sx={{ mb: 4 }} />
       {/* Grid of Config Cards */}
       {!selectedBusiness ? (
-        <EmptyBusinessState />
+        user?.role === "admin" || user?.role === "superadmin" ? (
+          <InlineBusinessPicker businesses={businesses} onSelect={handleBusinessSelect} />
+        ) : <EmptyBusinessState />
       ) : isLoading ? (
         <Box sx={{ textAlign: align, mt: 8 }}>
           <LoadingState />

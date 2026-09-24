@@ -23,6 +23,22 @@ Font.registerHyphenationCallback((word) => [word]);
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------
 Font.register({
+  family: "IBM Plex Sans Arabic",
+  fonts: [
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Midable",
+  fonts: [
+    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
   family: "Arial",
   fonts: [
     { src: "/fonts/arial/ArialBold.ttf", fontWeight: 700, fontStyle: 'normal' },
@@ -37,6 +53,7 @@ Font.register({
     { src: "/fonts/futura/FuturaStdBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdBook.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdBookOblique.otf", fontWeight: 400, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensed.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
@@ -44,7 +61,6 @@ Font.register({
     { src: "/fonts/futura/FuturaStdCondensedLight.otf", fontWeight: 300, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedLightObl.otf", fontWeight: 300, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensedOblique.otf", fontWeight: 400, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdExtraBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdExtraBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdHeavy.otf", fontWeight: 800, fontStyle: 'normal' },
@@ -57,25 +73,9 @@ Font.register({
 });
 
 Font.register({
-  family: "IBM Plex Sans Arabic",
-  fonts: [
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
   family: "Love",
   fonts: [
     { src: "/fonts/love/LoveDays-2v7Oe.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Midable",
-  fonts: [
-    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   token: {
     fontSize: 9,
     fontWeight: "bold",
-    color: PDF_COLORS.brand,
+    color: PDF_COLORS.black,
     letterSpacing: 0.7,
     textAlign: "center",
   },
@@ -608,7 +608,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
               style={{
                 fontSize: ((customizations._qrCode.size || 70) / 70) * 9 * (72 / 96),
                 fontWeight: "bold",
-                color: PDF_COLORS.brand,
+                color: PDF_COLORS.black,
                 letterSpacing: 0.7,
                 marginTop: 2,
               }}

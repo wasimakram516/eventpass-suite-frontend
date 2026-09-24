@@ -34,7 +34,9 @@ import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
@@ -708,44 +710,12 @@ const Dashboard = () => {
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            rowGap: 2,
-            mt: 2,
-          }}
-        >
-          <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
-            <Typography variant="h4" sx={{
-              fontWeight: "bold"
-            }}>
-              {t.spinWheelManagement}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                mt: 0.5
-              }}>
-              {selectedBusinessObject
-                ? `${t.managingWheelsFor} ${selectedBusinessObject.name}`
-                : t.selectBusinessToView}
-            </Typography>
-          </Box>
-
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            sx={{
-              flexShrink: 0,
-              alignItems: "stretch",
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
-            {(user?.role === "admin" || user?.role === "superadmin") && (
+        <ModuleWorkingHeader
+          title={t.spinWheelManagement}
+          description={selectedBusinessObject ? `${t.managingWheelsFor} ${selectedBusinessObject.name}` : t.selectBusinessToView}
+          actions={(
+            <>
+            {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
@@ -765,13 +735,16 @@ const Dashboard = () => {
                 {t.createSpinWheel}
               </Button>
             )}
-          </Stack>
-        </Box>
+            </>
+          )}
+        />
 
         <Divider sx={{ my: 2 }} />
 
         {!selectedBusiness ? (
-          <EmptyBusinessState />
+          user?.role === "admin" || user?.role === "superadmin" ? (
+            <InlineBusinessPicker businesses={businesses} onSelect={handleBusinessSelect} />
+          ) : <EmptyBusinessState />
         ) : loading ? (
           <Box
             sx={{

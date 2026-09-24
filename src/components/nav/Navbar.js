@@ -13,6 +13,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useColorMode } from "@/contexts/ThemeContext";
@@ -28,6 +30,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { globalConfig } = useGlobalConfig();
   const { mode, toggleColorMode } = useColorMode();
+  const pathname = usePathname();
+  const isPublicRoot = pathname === "/";
   const [anchorEl, setAnchorEl] = useState(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { t } = useI18nLayout({
@@ -101,22 +105,31 @@ export default function Navbar() {
     <Box sx={{ position: "relative" }}>
       <AppBar
         position="fixed"
+        color="transparent"
         sx={{
-          backgroundColor: (theme) => theme.palette.navbar.appBarBg,
+          // AppBar's default colour variant supplies its own background layer.
+          // Set the full shorthand surface so the CMS header always matches the
+          // sidebar paper, rather than being visually overridden by that layer.
+          background: (theme) =>
+            isPublicRoot ? "transparent" : theme.palette.background.paper,
+          backgroundImage: "none",
+          backdropFilter: isPublicRoot ? "none" : undefined,
           boxShadow: "none",
           borderBottom: (theme) =>
-            `1px solid ${theme.palette.divider}`,
+            isPublicRoot ? "1px solid transparent" : `1px solid ${theme.palette.divider}`,
           height: "64px",
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Link href="/" style={{ textDecoration: "none" }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: "bold", color: "primary.main", letterSpacing: 1 }}
-            >
-              EventPass
-            </Typography>
+          <Link href="/" aria-label="EventPass" style={{ textDecoration: "none", display: "flex" }}>
+            <Image
+              src={mode === "dark" ? "/logoDark.png" : "/logoLight.png"}
+              alt="EventPass"
+              width={126}
+              height={50}
+              priority
+              style={{ width: "126px", height: "auto", maxHeight: "42px", objectFit: "contain" }}
+            />
           </Link>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

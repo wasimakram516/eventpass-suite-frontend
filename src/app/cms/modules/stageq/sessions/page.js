@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
@@ -30,6 +31,7 @@ import {
 } from "@/services/stageq/stageqSessionService";
 import { getEventsByBusinessSlug } from "@/services/eventreg/eventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
@@ -193,26 +195,9 @@ export default function ManageSessionsPage() {
             )}
             <Container maxWidth={false} disableGutters>
                 <BreadcrumbsNav />
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: { xs: "column", sm: "row" },
-                        justifyContent: "space-between",
-                        alignItems: { xs: "stretch", sm: "center" },
-                        mt: 2, mb: 1, gap: 2, flexWrap: "wrap",
-                    }}
-                >
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" sx={{
-                            fontWeight: "bold"
-                        }}>{t.pageTitle}</Typography>
-                        <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                        }}>{t.pageDescription}</Typography>
-                    </Box>
-
-                    <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1, width: { xs: "100%", sm: "auto" } }}>
-                        {(user?.role === "admin" || user?.role === "superadmin") && (
+                <ModuleWorkingHeader title={t.pageTitle} description={t.pageDescription} actions={(
+                  <>
+                        {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                             <Button variant="outlined" onClick={() => setDrawerOpen(true)} startIcon={<BusinessIcon />} sx={getStartIconSpacing(dir)}>
                                 {t.selectBusiness}
                             </Button>
@@ -222,13 +207,15 @@ export default function ManageSessionsPage() {
                                 {t.createSession}
                             </Button>
                         )}
-                    </Box>
-                </Box>
+                  </>
+                )} />
 
                 <Divider sx={{ mb: 3 }} />
 
                 {!selectedBusiness ? (
-                    <EmptyBusinessState />
+                    user?.role === "admin" || user?.role === "superadmin" ? (
+                        <InlineBusinessPicker businesses={allBusinesses} onSelect={setSelectedBusiness} />
+                    ) : <EmptyBusinessState />
                 ) : loading ? (
                     <Box sx={{ textAlign: "center", mt: 8 }}><CircularProgress /></Box>
                 ) : sessions.length === 0 ? (

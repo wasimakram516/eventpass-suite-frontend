@@ -37,6 +37,7 @@ import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { toArabicDigits } from "@/utils/arabicDigits";
@@ -73,6 +74,7 @@ const translations = {
     selectEventFilter: "Filter by event",
     allEvents: "All events",
     newForm: "Create Form",
+    manageRecipients: "Manage Recipients",
     editForm: "Edit Survey Form",
     createForm: "Create Survey Form",
     cloneForm: "Clone Survey Form",
@@ -146,6 +148,7 @@ const translations = {
     selectEventFilter: "تصفية حسب الفعالية",
     allEvents: "جميع الفعاليات",
     newForm: "إنشاء نموذج",
+    manageRecipients: "إدارة المستلمين",
     editForm: "تحرير نموذج الاستبيان",
     createForm: "إنشاء نموذج الاستبيان",
     cloneForm: "استنساخ نموذج الاستبيان",
@@ -835,19 +838,30 @@ export default function SurveyFormsManagePage() {
             spacing={dir === "rtl" ? 1 : 1}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            <Button
+            {selectedBusiness?._id && <Button
               fullWidth={isMobile}
-              sx={
-                isMobile
-                  ? { width: "100%", ...getStartIconSpacing(dir) }
-                  : { ...getStartIconSpacing(dir) }
-              }
               variant="outlined"
-              startIcon={<ICONS.business fontSize="small" />}
-              onClick={() => setBizDrawerOpen(true)}
+              startIcon={<ICONS.group fontSize="small" />}
+              onClick={() => router.push("/cms/modules/surveyguru/surveys/recipients")}
+              sx={isMobile ? { width: "100%", ...getStartIconSpacing(dir) } : getStartIconSpacing(dir)}
             >
-              {t.selectBusiness}
-            </Button>
+              {t.manageRecipients}
+            </Button>}
+            {selectedBusiness?._id && (
+              <Button
+                fullWidth={isMobile}
+                sx={
+                  isMobile
+                    ? { width: "100%", ...getStartIconSpacing(dir) }
+                    : { ...getStartIconSpacing(dir) }
+                }
+                variant="outlined"
+                startIcon={<ICONS.business fontSize="small" />}
+                onClick={() => setBizDrawerOpen(true)}
+              >
+                {t.selectBusiness}
+              </Button>
+            )}
 
             {selectedBusiness?._id && (
               <FormControl
@@ -901,7 +915,15 @@ export default function SurveyFormsManagePage() {
 
         {/* Content states */}
         {!selectedBusiness?._id ? (
-          <EmptyBusinessState />
+          user?.role === "admin" || user?.role === "superadmin" ? (
+            <InlineBusinessPicker
+              businesses={businesses}
+              onSelect={(slug) => {
+                setSelectedBizSlug(slug);
+                setSelectedBusiness(slug);
+              }}
+            />
+          ) : <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />

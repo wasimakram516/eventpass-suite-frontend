@@ -1,8 +1,9 @@
 ﻿"use client";
 
-import { Box, Container, Typography, Divider, Stack } from "@mui/material";
+import { Box, Container, Divider } from "@mui/material";
 import DashboardCard from "@/components/cards/DashboardCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import { NEUTRAL_ACCENT } from "@/styles/theme";
@@ -44,25 +45,8 @@ export default function SurveyGuruDashboard() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-      {/* Header */}
-      <Stack
-        spacing={1}
-        sx={{
-          alignItems: "flex-start",
-          mb: 4
-        }}>
-        <Typography variant="h4" sx={{
-          fontWeight: "bold"
-        }}>
-          {t.title}
-        </Typography>
-        <Typography variant="body2" sx={{
-          color: "text.secondary"
-        }}>
-          {t.subtitle}
-        </Typography>
-        <Divider sx={{ width: "100%", mt: 2 }} />
-      </Stack>
+      <ModuleWorkingHeader title={t.title} description={t.subtitle} />
+      <Divider sx={{ mt: 2, mb: 4 }} />
       {/* Cards */}
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           <DashboardCard

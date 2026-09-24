@@ -18,6 +18,7 @@ import {
 import GameFormModal from "@/components/modals/GameFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 
 import {
   getGamesByBusiness,
@@ -34,6 +35,7 @@ import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -243,40 +245,9 @@ export default function TapMatchGamesPage() {
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: 2,
-              mb: 3,
-            }}
-          >
-            <Box>
-              <Typography variant="h5" sx={{
-                fontWeight: "bold"
-              }}>
-                {t.manageGames}
-              </Typography>
-              <Typography variant="body2" sx={{
-                color: "text.secondary"
-              }}>
-                {t.gamesDescription}
-              </Typography>
-            </Box>
-
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: dir === "rtl" ? 2 : 1,
-              }}
-            >
-              {(user?.role === "admin" || user?.role === "superadmin") && (
+          <ModuleWorkingHeader title={t.manageGames} description={t.gamesDescription} actions={(
+            <>
+              {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"
                   startIcon={<ICONS.business />}
@@ -302,14 +273,16 @@ export default function TapMatchGamesPage() {
                   {t.createGameButton}
                 </Button>
               )}
-            </Stack>
-          </Box>
+            </>
+          )} />
 
           <Divider />
         </Box>
 
         {!selectedBusiness ? (
-          <EmptyBusinessState />
+          user?.role === "admin" || user?.role === "superadmin" ? (
+            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
+          ) : <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
             <CircularProgress />

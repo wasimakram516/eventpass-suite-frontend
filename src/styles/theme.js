@@ -2,7 +2,9 @@ import { createTheme } from "@mui/material/styles";
 
 export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
-  const primaryMain = isDark ? "#2DD4BF" : "#0F766E";
+  // EventPass blue is the single CMS primary in both modes. Dark mode uses a
+  // lighter tint so interactive text and controls remain accessible.
+  const primaryMain = isDark ? "#60A5FA" : "#1D4ED8";
   const secondaryMain = isDark ? "#FFE14D" : "#F5C518";
 
   const successMain = "#2e7d32";
@@ -15,10 +17,19 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       mode,
       primary: {
         main: primaryMain,
-        // dark-mode primary is a light mint tint (for contrast against the
+        light: isDark ? "#93C5FD" : "#3B82F6",
+        dark: isDark ? "#2563EB" : "#1E40AF",
+        // dark-mode primary is a light blue tint (for contrast against the
         // dark background), so it needs dark text; light-mode primary stays
         // dark enough for white text.
         contrastText: isDark ? "#0f1417" : "#ffffff",
+      },
+      eventpass: {
+        primary: primaryMain,
+        hover: isDark ? "#93C5FD" : "#1E40AF",
+        surface: isDark ? "rgba(96,165,250,0.14)" : "#EFF6FF",
+        surfaceHover: isDark ? "rgba(96,165,250,0.22)" : "#DBEAFE",
+        onPrimary: isDark ? "#0F172A" : "#FFFFFF",
       },
       common: {
         white: "#ffffff",
@@ -829,7 +840,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         moduleChipIconColor: isDark ? "#d4d4d8" : "#52525b",
       },
       navbar: {
-        appBarBg: isDark ? "rgba(26,34,38,0.6)" : "rgba(255,255,255,0.3)",
+        appBarBg: isDark ? "#101827" : "#ffffff",
         avatarButtonHoverShadow: isDark
           ? "3px 3px 8px rgba(0,0,0,0.6), -3px -3px 8px rgba(255,255,255,0.1), inset 2px 2px 5px rgba(0,0,0,0.3), inset -2px -2px 5px rgba(255,255,255,0.1)"
           : "3px 3px 8px rgba(0,0,0,0.2), -3px -3px 8px rgba(255,255,255,0.6), inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(255,255,255,0.7)",
@@ -1129,11 +1140,11 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             },
 
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#5eead4" : "#0b5c56",
+              borderColor: theme.palette.primary.main,
             },
 
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#5eead4" : "#0b5c56",
+              borderColor: theme.palette.primary.main,
             },
           }),
         },
