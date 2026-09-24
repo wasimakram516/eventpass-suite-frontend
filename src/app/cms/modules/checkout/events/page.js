@@ -6,6 +6,7 @@ import {
 } from "@/components/registration/EventsPage";
 import {
   getAllCheckoutEventsByBusiness,
+  getCheckoutEventBySlugForCms,
   createCheckoutEvent,
   updateCheckoutEvent,
   deleteCheckoutEvent,
@@ -36,6 +37,7 @@ const checkoutTranslations = {
 
 const checkoutEventService = {
   getAllEventsByBusiness: getAllCheckoutEventsByBusiness,
+  getEventBySlugForCms: getCheckoutEventBySlugForCms,
   createEvent: createCheckoutEvent,
   updateEvent: updateCheckoutEvent,
   deleteEvent: deleteCheckoutEvent,

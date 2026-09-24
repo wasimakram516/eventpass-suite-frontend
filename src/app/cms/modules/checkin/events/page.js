@@ -35,6 +35,7 @@ import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 const translations = {
   en: {
@@ -42,6 +43,7 @@ const translations = {
     pageDescription: "Manage all closed check-in events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
+    showAllEvents: "Show All Events",
     noEvents: "No events found.",
     noBusinesses: "No businesses found.",
     eventCreated: "Event created!",
@@ -77,6 +79,7 @@ const translations = {
     pageDescription: "إدارة جميع فعاليات تسجيل الحضور المغلقة لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
+    showAllEvents: "عرض جميع الفعاليات",
     noEvents: "لا توجد فعاليات.",
     noBusinesses: "لم يتم العثور على أي عمل.",
     eventCreated: "تم إنشاء الفعالية!",
@@ -180,15 +183,14 @@ export default function EventsPage() {
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      return;
-    }
     if (!silent) setLoading(true);
-    const result = await getAllCheckInEvents(selectedBusiness);
-    if (!result?.error) setEvents(result?.events ?? []);
+    const { events: fetchedEvents, error, missingBusiness } = await fetchCmsEvents({
+      businessSlug: selectedBusiness,
+      getAllEventsByBusiness: getAllCheckInEvents,
+    });
+    if (!error) setEvents(fetchedEvents);
     else if (!silent) setEvents([]);
-    if (!silent) setLoading(false);
+    if (!silent || missingBusiness) setLoading(false);
   }, [selectedBusiness]);
 
   useEffect(() => {
@@ -207,7 +209,14 @@ export default function EventsPage() {
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
+    setSearchTerm("");
     setDrawerOpen(false);
+    router.replace("/cms/modules/checkin/events");
+  };
+
+  const handleShowAllEvents = () => {
+    setSearchTerm("");
+    router.replace("/cms/modules/checkin/events");
   };
 
   const handleOpenCreate = () => {

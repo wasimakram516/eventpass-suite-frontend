@@ -33,6 +33,7 @@ import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 const translations = {
   en: {
@@ -40,6 +41,7 @@ const translations = {
     pageDescription: "Manage all DigiPass events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
+    showAllEvents: "Show All Events",
     noEvents: "No events found.",
     noBusinesses: "No businesses found.",
     eventCreated: "Event created!",
@@ -68,6 +70,7 @@ const translations = {
     pageDescription: "إدارة جميع فعاليات DigiPass لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
+    showAllEvents: "عرض جميع الفعاليات",
     noEvents: "لا توجد فعاليات.",
     noBusinesses: "لم يتم العثور على أي عمل.",
     eventCreated: "تم إنشاء الفعالية!",
@@ -137,17 +140,13 @@ export default function EventsPage() {
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   useEffect(() => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
     const fetchEvents = async () => {
       setLoading(true);
-      const result = await getAllDigipassEvents(selectedBusiness);
-      if (!result?.error) setEvents(result.events || []);
-      else setEvents([]);
+      const { events: fetchedEvents, error } = await fetchCmsEvents({
+        businessSlug: selectedBusiness,
+        getAllEventsByBusiness: getAllDigipassEvents,
+      });
+      setEvents(error ? [] : fetchedEvents);
       setLoading(false);
     };
 
@@ -166,7 +165,14 @@ export default function EventsPage() {
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
+    setSearchTerm("");
     setDrawerOpen(false);
+    router.replace("/cms/modules/digipass/events");
+  };
+
+  const handleShowAllEvents = () => {
+    setSearchTerm("");
+    router.replace("/cms/modules/digipass/events");
   };
 
   const handleOpenCreate = () => {

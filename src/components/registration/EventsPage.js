@@ -30,6 +30,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 export const eventTranslations = {
   en: {
@@ -37,6 +38,7 @@ export const eventTranslations = {
     pageDescription: "Manage all public registration events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
+    showAllEvents: "Show All Events",
     noEvents: "No events found.",
     noBusinesses: "No businesses found.",
     eventCreated: "Event created!",
@@ -70,6 +72,7 @@ export const eventTranslations = {
     pageDescription: "إدارة جميع فعاليات التسجيل العام لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
+    showAllEvents: "عرض جميع الفعاليات",
     noEvents: "لا توجد فعاليات.",
     noBusinesses: "لم يتم العثور على أي عمل.",
     eventCreated: "تم إنشاء الفعالية!",
@@ -192,16 +195,14 @@ export function EventsPage({
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
     if (!silent) setLoading(true);
-    const result = await getAllEventsByBusiness(selectedBusiness);
-    if (!result?.error) setEvents(result.events || []);
+    const { events: fetchedEvents, error, missingBusiness } = await fetchCmsEvents({
+      businessSlug: selectedBusiness,
+      getAllEventsByBusiness,
+    });
+    if (!error) setEvents(fetchedEvents);
     else if (!silent) setEvents([]);
-    if (!silent) setLoading(false);
+    if (!silent || missingBusiness) setLoading(false);
   }, [getAllEventsByBusiness, selectedBusiness]);
 
   useEffect(() => {
@@ -220,7 +221,14 @@ export function EventsPage({
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
+    setSearchTerm("");
     setDrawerOpen(false);
+    router.replace(routeBase);
+  };
+
+  const handleShowAllEvents = () => {
+    setSearchTerm("");
+    router.replace(routeBase);
   };
 
   const handleOpenCreate = () => {
@@ -362,16 +370,16 @@ export function EventsPage({
                     setEventToShare(ev);
                     setShareModalOpen(true);
                   } : undefined}
-                  onInsights={showInsights && canView ? () =>
-                    router.push(
-                      `${routeBase}/${ev.slug}/insights`
-                    )
-                  : undefined}
                   onPromoCodes={showPromoCodes && canViewPromoCodes ? () =>
                     router.push(`${routeBase}/${ev.slug}/promo-codes`)
                   : undefined}
                   onPayments={showPayments && canViewPayments ? () =>
                     router.push(`${routeBase}/${ev.slug}/payments`)
+                  : undefined}
+                  onInsights={showInsights && canView ? () =>
+                    router.push(
+                      `${routeBase}/${ev.slug}/insights`
+                    )
                   : undefined}
                 />
               );
