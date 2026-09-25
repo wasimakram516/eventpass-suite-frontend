@@ -383,6 +383,7 @@ export function RegistrationsPage({
   const paymentEnabled = showPaymentFeatures && eventDetails?.isPaid;
   const breadcrumbs = moduleKey === "checkout"
     ? [
+      { label: language === "ar" ? "الوحدات" : "Modules", href: "/cms/modules" },
       { label: language === "ar" ? "الدفع" : "Checkout", href: routeBase },
       { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}/registrations` },
       { label: t.registrations },

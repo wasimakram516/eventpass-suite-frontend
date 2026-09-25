@@ -18,6 +18,7 @@ import { Dialog, DialogContent } from "@mui/material";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -228,7 +229,7 @@ export default function FileStorePage() {
           </Box>
 
           <Box sx={{ display: "flex", gap: 1 }}>
-            {(user?.role === "admin" || user?.role === "superadmin") && (
+            {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
@@ -255,7 +256,12 @@ export default function FileStorePage() {
         <Divider sx={{ mb: 3 }} />
 
         {!selectedBusiness ? (
-          <EmptyBusinessState />
+          user?.role === "admin" || user?.role === "superadmin" ? (
+            <InlineBusinessPicker
+              businesses={allBusinesses}
+              onSelect={handleBusinessSelect}
+            />
+          ) : <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />

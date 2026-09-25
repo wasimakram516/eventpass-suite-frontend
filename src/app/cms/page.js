@@ -48,6 +48,7 @@ import {
 import LoadingState from "@/components/LoadingState";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -383,6 +384,7 @@ export default function HomePage() {
     modules,
     groupByModuleCategory,
   );
+  const canViewCheckoutPayments = useHasPermission("checkout", "view_payments");
 
   const coreModule = coreModules[0];
   const isCoreVisible =
@@ -518,7 +520,7 @@ export default function HomePage() {
           label: mod.buttons?.[language] || mod.buttons?.en || t.openModule,
           href: getModuleWorkingRoute(mod),
         } : undefined}
-        secondaryAction={key.toLowerCase() === "checkout" ? {
+        secondaryAction={key.toLowerCase() === "checkout" && canViewCheckoutPayments ? {
           label: t.paymentDashboard,
           href: "/cms/modules/checkout/payments",
         } : undefined}

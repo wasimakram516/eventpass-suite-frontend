@@ -431,6 +431,7 @@ export function PromoCodesPage({
   useEventRegSocket({ eventId: event?._id, onPromoCodeUpdated: handlePromoCodeUpdated });
 
   const breadcrumbs = [
+    { label: language === "ar" ? "الوحدات" : "Modules", href: "/cms/modules" },
     { label: moduleLabel || t.moduleLabel, href: eventBase },
     { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },
