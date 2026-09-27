@@ -12,8 +12,14 @@ import {
   MenuItem,
   CircularProgress,
   Switch,
+  Checkbox,
   FormControlLabel,
   IconButton,
+  FormGroup,
+  FormControl,
+  InputLabel,
+  Select,
+  Radio,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import { useMessage } from "@/contexts/MessageContext";
@@ -24,6 +30,7 @@ import { uploadMediaFiles } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import { deleteMedia } from "@/services/deleteMediaService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import { getEventsByBusinessSlug, getPublicEventById } from "@/services/eventreg/eventService";
 
 const translations = {
   en: {
@@ -50,6 +57,16 @@ const translations = {
     playersPerTeam: "Players per Team",
     teamNames: "Team Names",
     teamNamePlaceholder: "Team {number} Name",
+    linkToEventReg: "Link to EventReg Event (Optional)",
+    selectEvent: "Select Event",
+    loadFields: "Load Fields",
+    loadingFields: "Loading Fields...",
+    selectPrimaryField: "Select Primary Field",
+    primaryFieldHint: "Only required (non-empty) fields of the linked event can be used as the primary key.",
+    collectAdditionalFields: "Collect additional fields when unmatched",
+    collectAdditionalFieldsHint: "When on, an unmatched player fills the selected fields on a second page. When off, a new registration is created from the primary key value alone, skipping the event's required fields.",
+    selectAdditionalFields: "Fields to collect on the second page",
+    selectAdditionalFieldsHint: "Choose which linked-event fields an unmatched player fills before a registration is created.",
     errors: {
       titleRequired: "Title is required",
       slugRequired: "Slug is required",
@@ -64,6 +81,7 @@ const translations = {
       playersPerTeamRequired: "Players per team is required",
       teamNamesRequired: "All team names are required",
       memoryImagesRequired: "At least one memory image is required",
+      primaryFieldRequired: "Please select a primary field.",
     },
     deleteMemoryImageTitle: "Delete Memory Image",
     deleteMemoryImageMessage: "Are you sure you want to delete this memory image? This action cannot be undone.",
@@ -95,6 +113,16 @@ const translations = {
     playersPerTeam: "عدد اللاعبين في كل فريق",
     teamNames: "أسماء الفرق",
     teamNamePlaceholder: "اسم الفريق {number}",
+    linkToEventReg: "ربط بحدث EventReg (اختياري)",
+    selectEvent: "اختيار الحدث",
+    loadFields: "تحميل الحقول",
+    loadingFields: "جارٍ تحميل الحقول...",
+    selectPrimaryField: "اختر الحقل الأساسي",
+    primaryFieldHint: "يمكن استخدام الحقول الإلزامية (غير الفارغة) من الحدث المرتبط فقط كمفتاح أساسي.",
+    collectAdditionalFields: "جمع حقول إضافية عند عدم التطابق",
+    collectAdditionalFieldsHint: "عند التفعيل، يملأ الشخص غير المتطابق الحقول المحددة في صفحة ثانية. عند الإيقاف، يُنشأ تسجيل جديد من قيمة المفتاح الأساسي فقط، مع تخطي الحقول الإلزامية للحدث.",
+    selectAdditionalFields: "الحقول المراد جمعها في الصفحة الثانية",
+    selectAdditionalFieldsHint: "اختر حقول الحدث المرتبط التي سيملؤها الشخص غير المتطابق قبل إنشاء التسجيل.",
     errors: {
       titleRequired: "العنوان مطلوب",
       slugRequired: "المعرف مطلوب",
@@ -109,6 +137,7 @@ const translations = {
       playersPerTeamRequired: "عدد اللاعبين في كل فريق مطلوب",
       teamNamesRequired: "يرجى إدخال أسماء جميع الفرق",
       memoryImagesRequired: "يجب رفع صورة واحدة على الأقل للبطاقات",
+      primaryFieldRequired: "يرجى اختيار الحقل الأساسي.",
     },
     deleteMemoryImageTitle: "حذف صورة الذاكرة",
     deleteMemoryImageMessage: "هل أنت متأكد من حذف صورة الذاكرة هذه؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -159,6 +188,10 @@ const GameFormModal = ({
     oImagePreview: "",
     pvpScreenMode: "dual",
   });
+
+  const [eventRegEvents, setEventRegEvents] = useState([]);
+  const [linkedEventFields, setLinkedEventFields] = useState([]);
+  const [loadingFields, setLoadingFields] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -228,8 +261,13 @@ const GameFormModal = ({
         oImage: null,
         oImagePreview: "",
         pvpScreenMode: "dual",
+        linkedEventRegId: "",
+        primaryField: "",
+        collectAdditionalFields: true,
+        additionalFieldNames: [],
       });
       setErrors({});
+      setLinkedEventFields([]);
       return;
     }
 
@@ -262,9 +300,19 @@ const GameFormModal = ({
         xImagePreview: initialValues.xImage || "",
         oImagePreview: initialValues.oImage || "",
         pvpScreenMode: initialValues.pvpScreenMode || "dual",
+        linkedEventRegId: initialValues.linkedEventRegId?._id || initialValues.linkedEventRegId || "",
+        primaryField: initialValues.primaryField || "",
+        collectAdditionalFields: initialValues.collectAdditionalFields !== false,
+        additionalFieldNames: Array.isArray(initialValues.additionalFieldNames)
+          ? initialValues.additionalFieldNames
+          : [],
       }));
 
       setErrors({});
+
+      if (initialValues.linkedEventRegId?._id || initialValues.linkedEventRegId) {
+        fetchLinkedFields(initialValues.linkedEventRegId?._id || initialValues.linkedEventRegId);
+      }
     }
   }, [open, editMode, initialValues]);
 
@@ -303,6 +351,57 @@ const GameFormModal = ({
       return updated;
     });
   };
+
+  const handleEventChange = (e) => {
+    const value = e.target.value;
+    setForm((prev) => ({
+      ...prev,
+      linkedEventRegId: value,
+      primaryField: value ? prev.primaryField : "",
+      additionalFieldNames: value ? prev.additionalFieldNames : [],
+    }));
+    setLinkedEventFields([]);
+    if (value) fetchLinkedFields(value);
+  };
+
+  const fetchLinkedFields = async (eventId) => {
+    setLoadingFields(true);
+    setLinkedEventFields([]);
+    try {
+      const event = await getPublicEventById(eventId);
+      const raw = event?.formFields || [];
+      const fields =
+        raw.length > 0
+          ? raw.map((f) => ({
+              name: f.inputName,
+              label: f.inputName,
+              inputType: f.inputType || "text",
+              required: !!f.required,
+            }))
+          : [
+              { name: "fullName", label: "Full Name", inputType: "text", required: true },
+              { name: "email", label: "Email", inputType: "email", required: true },
+              { name: "phone", label: "Phone", inputType: "phone", required: false },
+              { name: "company", label: "Company", inputType: "text", required: false },
+            ];
+      setLinkedEventFields(fields);
+    } catch (err) {
+      console.error("Failed to load linked event fields:", err);
+      showMessage("Failed to load linked event fields", "error");
+    } finally {
+      setLoadingFields(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedBusiness) {
+      setEventRegEvents([]);
+      return;
+    }
+    getEventsByBusinessSlug(selectedBusiness)
+      .then((events) => setEventRegEvents(Array.isArray(events) ? events : []))
+      .catch(() => setEventRegEvents([]));
+  }, [selectedBusiness]);
 
   const handleFileChange = (e, key, multiple = false) => {
     const files = Array.from(e.target.files || []);
@@ -576,6 +675,10 @@ const GameFormModal = ({
         newErrors.teamNames = te.teamNamesRequired;
     }
 
+    if (form.linkedEventRegId && !form.primaryField) {
+      newErrors.primaryField = te.primaryFieldRequired;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -772,6 +875,11 @@ const GameFormModal = ({
         payload.teamNames = form.teamNames;
       }
 
+      payload.linkedEventRegId = form.linkedEventRegId || null;
+      payload.primaryField = form.linkedEventRegId ? form.primaryField : null;
+      payload.collectAdditionalFields = form.linkedEventRegId ? !!form.collectAdditionalFields : true;
+      payload.additionalFieldNames = form.linkedEventRegId ? form.additionalFieldNames : [];
+
       await onSubmit(payload, editMode);
       setLoading(false);
     } catch (error) {
@@ -789,9 +897,11 @@ const GameFormModal = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: "background.paper",
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "background.paper",
+          },
         },
       }}
     >
@@ -1072,7 +1182,144 @@ const GameFormModal = ({
             </Box>
           )}
 
-          {/* Image Fields with Preview and Delete */}
+          {/* EventReg Linking */}
+          <Box
+            sx={{
+              borderTop: (theme) => `1px solid ${theme.palette.sharedUI.sectionDivider}`,
+              pt: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <FormControl fullWidth>
+              <InputLabel>{t.linkToEventReg}</InputLabel>
+              <Select
+                value={form.linkedEventRegId}
+                label={t.linkToEventReg}
+                onChange={handleEventChange}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {eventRegEvents.map((ev) => (
+                  <MenuItem key={ev._id} value={ev._id}>
+                    {ev.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {form.linkedEventRegId && (
+              <>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => fetchLinkedFields(form.linkedEventRegId)}
+                  disabled={loadingFields}
+                  startIcon={loadingFields ? <CircularProgress size={16} color="inherit" /> : null}
+                >
+                  {loadingFields ? t.loadingFields : t.loadFields}
+                </Button>
+
+                {linkedEventFields.length > 0 && (
+                  <>
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 600, color: "text.secondary" }}
+                      >
+                        {t.selectPrimaryField} *
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        {t.primaryFieldHint}
+                      </Typography>
+                      <FormGroup sx={{ mt: 0.5, my: 1 }}>
+                        {linkedEventFields.map((f) => (
+                          <FormControlLabel
+                            key={f.name}
+                            control={
+                              <Radio
+                                size="small"
+                                disabled={!f.required}
+                                checked={form.primaryField === f.name}
+                                onChange={() =>
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    primaryField: f.name,
+                                  }))
+                                }
+                              />
+                            }
+                            label={<Typography variant="body2">{f.label}</Typography>}
+                          />
+                        ))}
+                      </FormGroup>
+                    </Box>
+
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          size="small"
+                          checked={!!form.collectAdditionalFields}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              collectAdditionalFields: e.target.checked,
+                            }))
+                          }
+                        />
+                      }
+                      label={
+                        <Typography variant="body2">{t.collectAdditionalFields}</Typography>
+                      }
+                    />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      {t.collectAdditionalFieldsHint}
+                    </Typography>
+
+                    {!!form.collectAdditionalFields && (
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontWeight: 600, color: "text.secondary", display: "block", mt: 1 }}
+                        >
+                          {t.selectAdditionalFields}
+                        </Typography>
+                        <FormGroup sx={{ mt: 0.5 }}>
+                          {linkedEventFields
+                            .filter((f) => f.name !== form.primaryField)
+                            .map((f) => (
+                              <FormControlLabel
+                                key={f.name}
+                                control={
+                                  <Checkbox
+                                    size="small"
+                                    checked={form.additionalFieldNames.includes(f.name)}
+                                    onChange={(e) =>
+                                      setForm((prev) => ({
+                                        ...prev,
+                                        additionalFieldNames: e.target.checked
+                                          ? [...prev.additionalFieldNames, f.name]
+                                          : prev.additionalFieldNames.filter((n) => n !== f.name),
+                                      }))
+                                    }
+                                  />
+                                }
+                                label={<Typography variant="body2">{f.label}</Typography>}
+                              />
+                            ))}
+                        </FormGroup>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          {t.selectAdditionalFieldsHint}
+                        </Typography>
+                      </Box>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </Box>
           <Box
             sx={{
               display: "flex",

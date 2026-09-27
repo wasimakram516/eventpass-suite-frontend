@@ -14,6 +14,7 @@ import {
 import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
@@ -103,6 +104,7 @@ export default function ManagePollsPage() {
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [pollToShare, setPollToShare] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const requestedBusiness = searchParams.get("business")?.trim();
 
     useEffect(() => {
         const initialSearch = searchParams.get("search");
@@ -122,24 +124,38 @@ export default function ManagePollsPage() {
     }, [user, selectedBusiness, setSelectedBusiness]);
 
     useEffect(() => {
+        if (requestedBusiness && selectedBusiness !== requestedBusiness) {
+            setLoading(true);
+            setPolls([]);
+            setSelectedBusiness(requestedBusiness);
+            return;
+        }
+
         if (!selectedBusiness) {
             setPolls([]);
             setLoading(false);
             return;
         }
+
+        let active = true;
         const fetchPolls = async () => {
             setLoading(true);
             const [pollResult, eventsResult] = await Promise.all([
                 getPolls(selectedBusiness),
                 getEventsByBusinessSlug(selectedBusiness).catch(() => []),
             ]);
+            if (!active) return;
+
             if (!pollResult?.error) setPolls(Array.isArray(pollResult) ? pollResult : []);
             else setPolls([]);
             setEventRegEvents(Array.isArray(eventsResult) ? eventsResult : []);
             setLoading(false);
         };
         fetchPolls();
-    }, [selectedBusiness]);
+        return () => {
+            active = false;
+        };
+    }, [requestedBusiness, selectedBusiness, setSelectedBusiness]);
 
     const handleOpenCreate = () => {
         setSelectedPoll(null);
@@ -154,6 +170,10 @@ export default function ManagePollsPage() {
     const handleCloseModal = () => {
         setOpenModal(false);
         setSelectedPoll(null);
+    };
+
+    const handleShowAllPolls = () => {
+        setSearchTerm("");
     };
 
     const handleSubmitPoll = async (payload, pollId) => {
@@ -221,6 +241,10 @@ export default function ManagePollsPage() {
                 <BreadcrumbsNav />
                 <ModuleWorkingHeader title={t.pageTitle} description={t.pageDescription} actions={(
                   <>
+                        <AuditSearchClearButton
+                            visible={Boolean(searchTerm)}
+                            onClear={handleShowAllPolls}
+                        />
                         {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                             <Button variant="outlined" onClick={() => setDrawerOpen(true)} startIcon={<BusinessIcon />} sx={getStartIconSpacing(dir)}>
                                 {t.selectBusiness}

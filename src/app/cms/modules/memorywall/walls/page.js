@@ -11,6 +11,7 @@ import {
 import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import {
   Box,
   Button,
@@ -214,6 +215,11 @@ export default function WallConfigsPage() {
     });
   }, [wallConfigs, searchTerm]);
 
+  const handleShowAllWalls = () => {
+    setSearchTerm("");
+    router.replace("/cms/modules/memorywall/walls");
+  };
+
   const handleBusinessSelect = (businessSlug) => {
     setSelectedBusiness(businessSlug);
     fetchWallConfigs(businessSlug);
@@ -291,6 +297,10 @@ export default function WallConfigsPage() {
         description={selectedBusiness ? `${t.manageDisplayWalls} ${selectedBusinessObject?.name}` : t.selectBusinessToView}
         actions={(
           <>
+          <AuditSearchClearButton
+            visible={Boolean(searchTerm)}
+            onClear={handleShowAllWalls}
+          />
           {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"

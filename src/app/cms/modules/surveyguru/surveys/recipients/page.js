@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -812,6 +813,7 @@ export default function RecipientsManagePage() {
               }}
             />
           )}
+          <AuditSearchClearButton />
 
           <Box
             sx={{

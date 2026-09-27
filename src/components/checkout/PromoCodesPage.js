@@ -37,8 +37,9 @@ import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 dayjs.extend(utc);
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -286,6 +287,7 @@ export function PromoCodesPage({
 }) {
   const router = useRouter();
   const { eventSlug } = useParams();
+  const searchParams = useSearchParams();
   const { t, dir, language } = useI18nLayout(translations);
   const canCreate = useHasPermission(moduleKey, "create_promo_codes");
   const canEdit = useHasPermission(moduleKey, "edit_promo_codes");
@@ -333,6 +335,12 @@ export function PromoCodesPage({
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState(emptyFilters);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  // Audit Logs links open a promo code with ?search=<code> to focus it.
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) setRawSearch(initialSearch.trim());
+  }, [searchParams]);
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -563,6 +571,10 @@ export function PromoCodesPage({
           <Typography variant="body2" color="text.secondary">{t.description}</Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+          <AuditSearchClearButton
+            visible={Boolean(rawSearch)}
+            onClear={() => { setRawSearch(""); setSearchTerm(""); }}
+          />
           {showRegistrations && <Button
             variant="outlined"
             startIcon={<ICONS.people />}

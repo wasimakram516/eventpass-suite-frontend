@@ -35,6 +35,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -715,6 +716,7 @@ const Dashboard = () => {
           description={selectedBusinessObject ? `${t.managingWheelsFor} ${selectedBusinessObject.name}` : t.selectBusinessToView}
           actions={(
             <>
+            <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
             {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"

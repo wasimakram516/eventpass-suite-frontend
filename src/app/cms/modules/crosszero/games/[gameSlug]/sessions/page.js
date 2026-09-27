@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Box, Container, Typography, Stack, Divider, Paper, Grid, Fade,
-  Button, CircularProgress, Pagination, FormControl, InputLabel, Select, MenuItem,
+  Button, CircularProgress, Pagination,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import ArabicPagination from "@/components/ArabicPagination";
@@ -13,11 +13,14 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
 import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
+import { useGameResultsStream } from "@/hooks/useGameResultsSocket";
 import { getAllSessions, resetSessions, exportResults } from "@/services/crosszero/gameSessionService";
 
 const translations = {
@@ -33,7 +36,8 @@ const translations = {
     player1: "Player 1", player2: "Player 2",
     wins: "Wins", winner: "Winner", tie: "Draw",
     unknown: "Unknown", noData: "No sessions found.",
-    recordsPerPage: "Per page", showing: "Showing", to: "to", of: "of", records: "sessions",
+    recordsPerPage: "Records per page", showing: "Showing", to: "to", of: "of", records: "sessions",
+    searchPlaceholder: "Search...",
     moves: "Moves", timeTaken: "Time",
     company: "Company",
     exported: "Exported!",
@@ -50,17 +54,27 @@ const translations = {
     player1: "اللاعب الأول", player2: "اللاعب الثاني",
     wins: "فاز", winner: "الفائز", tie: "تعادل",
     unknown: "غير معروف", noData: "لا توجد جلسات.",
-    recordsPerPage: "لكل صفحة", showing: "عرض", to: "إلى", of: "من", records: "جلسات",
+    recordsPerPage: "السجلات لكل صفحة", showing: "عرض", to: "إلى", of: "من", records: "جلسات",
+    searchPlaceholder: "بحث...",
     moves: "الحركات", timeTaken: "الوقت",
     company: "الشركة",
     exported: "تم التصدير!",
   },
 };
 
-
+function sessionMatchesSearch(session, term) {
+  const t = term.toLowerCase();
+  const parts = [];
+  session.players?.forEach((p) => {
+    if (p?.playerId?.name) parts.push(p.playerId.name);
+    if (p?.playerId?.company) parts.push(p.playerId.company);
+  });
+  return parts.join(" ").toLowerCase().includes(t);
+}
 
 export default function CrossZeroPvPSessionsPage() {
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { t, dir, language } = useI18nLayout(translations);
   const theme = useTheme();
   const canReset = useHasPermission("crosszero", "delete");
@@ -70,7 +84,7 @@ export default function CrossZeroPvPSessionsPage() {
      O_wins: { mark: "O", ...theme.palette.crosszero.pvpResultMapO },
      draw: { mark: null, symbolColor: null, ...theme.palette.crosszero.pvpResultMapDraw },
   };
-  const [sessions, setSessions] = useState([]);
+  const [gameId, setGameId] = useState(null);
   const [totalSessions, setTotalSessions] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
@@ -78,18 +92,38 @@ export default function CrossZeroPvPSessionsPage() {
   const [exportLoading, setExportLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => setPage(1),
+  });
+
+  const { rows: sessions, setRows: setSessions, loadingMore } = useGameResultsStream({ gameId, getId: (s) => String(s._id) });
+
+  const filteredSessions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sessions;
+    return sessions.filter((s) => sessionMatchesSearch(s, term));
+  }, [sessions, searchTerm]);
+
+  const displaySessions = searchTerm.trim() ? filteredSessions : sessions;
+  const displayTotal = searchTerm.trim() ? filteredSessions.length : totalSessions;
+  const paginatedSessions = displaySessions.slice((page - 1) * limit, page * limit);
+  const fromRecord = displayTotal === 0 ? 0 : (page - 1) * limit + 1;
+  const toRecord = displayTotal === 0 ? 0 : Math.min(page * limit, displayTotal);
+
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      const res = await getAllSessions(gameSlug, page, limit);
+      const res = await getAllSessions(gameSlug);
       if (!res.error) {
         setSessions(res.sessions || []);
+        setGameId(res.sessions?.[0]?.gameId?._id || null);
         setTotalSessions(res.totalCount ?? 0);
       }
       setLoading(false);
     };
     if (gameSlug) fetch();
-  }, [gameSlug, page, limit]);
+  }, [gameSlug, setSessions]);
 
   const handleReset = async () => {
     const res = await resetSessions(gameSlug);
@@ -129,25 +163,29 @@ export default function CrossZeroPvPSessionsPage() {
         </Stack>
       </Box>
       <Divider sx={{ mb: 2 }} />
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="body2" sx={{
-          color: "text.secondary"
-        }}>
-          {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}–{toArabicDigits(Math.min(page * limit, totalSessions), language)} {t.of} {toArabicDigits(totalSessions, language)} {t.records}
-        </Typography>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>{t.recordsPerPage}</InputLabel>
-          <Select value={limit} label={t.recordsPerPage} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-            {[5, 10, 20].map((n) => <MenuItem key={n} value={n}>{toArabicDigits(n, language)}</MenuItem>)}
-          </Select>
-        </FormControl>
-      </Box>
+      <ResultsToolbar
+        dir={dir}
+        showing={
+          <>
+            {t.showing} {toArabicDigits(fromRecord, language)}–{toArabicDigits(toRecord, language)} {t.of} {toArabicDigits(displayTotal, language)} {t.records}
+          </>
+        }
+        searchTerm={rawSearch}
+        onSearchChange={setRawSearch}
+        perPage={limit}
+        onPerPageChange={(value) => {
+          setLimit(value);
+          setPage(1);
+        }}
+        perPageLabel={t.recordsPerPage}
+        searchPlaceholder={t.searchPlaceholder}
+      />
       {loading ? <LoadingState /> : sessions.length === 0 ? <NoDataAvailable /> : (
         <Stack spacing={3} sx={{
           alignItems: "center"
         }}>
           <Box sx={{ width: "100%", maxWidth: 620 }}>
-            {sessions.map((session) => {
+            {paginatedSessions.map((session) => {
               const p1 = session.players?.find((p) => p.playerType === "p1");
               const p2 = session.players?.find((p) => p.playerType === "p2");
               const xoStats = session.xoStats || {};
@@ -196,7 +234,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? theme.palette.crosszero.pvpWinnerBgO  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
+                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? theme.palette.crosszero.pvpWinnerBgO : (theme.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "grey.50"), borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="O"
@@ -237,7 +275,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ?  theme.palette.crosszero.pvpWinnerBgX  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
+                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ? theme.palette.crosszero.pvpWinnerBgX : (theme.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "grey.50"), borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="X"
@@ -278,8 +316,14 @@ export default function CrossZeroPvPSessionsPage() {
             })}
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-              <ArabicPagination count={Math.ceil(totalSessions / limit) || 1} page={page} onChange={(_, v) => setPage(v)} />
+              <ArabicPagination count={Math.ceil(displayTotal / limit) || 1} page={page} onChange={(_, v) => setPage(v)} />
             </Box>
+
+            {loadingMore && (
+              <Box sx={{ textAlign: "center", my: 2 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
           </Box>
         </Stack>
       )}

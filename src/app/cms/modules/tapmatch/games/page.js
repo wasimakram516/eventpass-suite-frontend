@@ -19,6 +19,7 @@ import GameFormModal from "@/components/modals/GameFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 
 import {
   getGamesByBusiness,
@@ -247,6 +248,7 @@ export default function TapMatchGamesPage() {
 
           <ModuleWorkingHeader title={t.manageGames} description={t.gamesDescription} actions={(
             <>
+              <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
               {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"

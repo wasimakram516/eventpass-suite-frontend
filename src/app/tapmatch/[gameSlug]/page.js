@@ -91,16 +91,16 @@ export default function TapMatchHomePage() {
             maxWidth: 800,
             width: "100%",
             backdropFilter: "blur(16px)",
-            backgroundColor: theme.palette.quiznest.glassBg,
+            backgroundColor: theme.palette.overlay.cardTransparent,
             borderRadius: 6,
-            border: `1px solid ${theme.palette.quiznest.glassBorder}`,
+            border: `1px solid ${theme.palette.loader.skeleton}`,
             boxShadow: theme.palette.quiznest.dialogShadow,
           })}
         >
           <Typography
             variant="h3"
             gutterBottom
-            sx={(theme) => ({ fontWeight: 800, mb: 3, color: theme.palette.common.white, textTransform: "capitalize", wordBreak: "break-word" })}
+            sx={(theme) => ({ fontWeight: 800, mb: 3, color: "text.primary", textTransform: "capitalize", wordBreak: "break-word" })}
           >
             {translatedTitle || game.title}
           </Typography>

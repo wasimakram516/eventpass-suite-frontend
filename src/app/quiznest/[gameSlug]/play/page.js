@@ -530,21 +530,21 @@ export default function PlayPage() {
         >
           <Paper
             elevation={8}
-            sx={{
+            sx={(theme) => ({
               width: "95%",
               maxWidth: "100%",
               p: { xs: 3, sm: 4 },
               textAlign: align,
               backdropFilter: "blur(16px)",
-              backgroundColor: theme.palette.quiznest.glassBg,
-              border: `1px solid ${theme.palette.quiznest.glassBorder}`,
+              backgroundColor: theme.palette.overlay.cardTransparent,
+              border: `1px solid ${theme.palette.loader.skeleton}`,
               borderRadius: 4,
               marginTop: "10vh",
               overflow: "hidden",
               wordBreak: "break-word",
               boxSizing: "border-box",
               boxShadow: theme.palette.quiznest.dialogShadow,
-            }}
+            })}
           >
             {/* Question label — small secondary badge */}
             <Typography
@@ -572,7 +572,7 @@ export default function PlayPage() {
                   return { xs: "0.8rem", sm: "1rem", md: "1.15rem" };
                 })(),
                 fontWeight: 700,
-                color: theme.palette.common.white,
+                color: "text.primary",
                 lineHeight: { xs: 1.4, sm: 1.5 },
                 wordBreak: "break-word",
                 overflowWrap: "break-word",
@@ -640,7 +640,9 @@ export default function PlayPage() {
                         borderWidth: 2,
                       };
                     return {
-                      bg: theme.palette.quiznest.answerDefaultBg,
+                      bg: theme.palette.mode === "dark"
+                        ? theme.palette.quiznest.answerDefaultBg
+                        : theme.palette.action.hover,
                       borderColor: theme.palette.quiznest.answerDefaultBorder,
                       borderWidth: 1.5,
                     };
@@ -691,7 +693,7 @@ export default function PlayPage() {
                             "border-color 0.2s ease, border-width 0.2s ease",
                           "&:hover": { backgroundColor: bg, borderColor },
                           "&:active": { backgroundColor: bg, borderColor },
-                          color: theme.palette.common.white,
+                          color: "text.primary",
                           fontSize: (() => {
                             const len = opt.length;
                             if (len <= 15) return { xs: "1rem", sm: "1.1rem", md: "1.2rem" };

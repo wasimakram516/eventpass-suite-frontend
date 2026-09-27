@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Box,
     Container,
@@ -35,6 +35,7 @@ import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 
 const translations = {
     en: {
@@ -79,6 +80,7 @@ const translations = {
 
 export default function ManageSessionsPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user, selectedBusiness, setSelectedBusiness } = useAuth();
     const { t, dir, language } = useI18nLayout(translations);
     const canCreate = useHasPermission("stageq", "create");
@@ -98,6 +100,11 @@ export default function ManageSessionsPage() {
     const [sessionToDelete, setSessionToDelete] = useState(null);
     const [shareModalOpen, setShareModalOpen] = useState(false);
     const [sessionToShare, setSessionToShare] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    useEffect(() => {
+        setSearchTerm((searchParams.get("search") || "").trim().toLowerCase());
+    }, [searchParams]);
 
     useEffect(() => {
         getAllBusinesses()
@@ -182,6 +189,15 @@ export default function ManageSessionsPage() {
         };
     };
 
+    const filteredSessions = useMemo(() => {
+        if (!searchTerm) return sessions;
+        return sessions.filter((session) =>
+            [session.title, session.slug].some((value) =>
+                String(value || "").toLowerCase().includes(searchTerm),
+            ),
+        );
+    }, [searchTerm, sessions]);
+
     return (
         <Box dir={dir}>
             {(user?.role === "admin" || user?.role === "superadmin") && (
@@ -197,6 +213,7 @@ export default function ManageSessionsPage() {
                 <BreadcrumbsNav />
                 <ModuleWorkingHeader title={t.pageTitle} description={t.pageDescription} actions={(
                   <>
+                        <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
                         {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                             <Button variant="outlined" onClick={() => setDrawerOpen(true)} startIcon={<BusinessIcon />} sx={getStartIconSpacing(dir)}>
                                 {t.selectBusiness}
@@ -218,11 +235,11 @@ export default function ManageSessionsPage() {
                     ) : <EmptyBusinessState />
                 ) : loading ? (
                     <Box sx={{ textAlign: "center", mt: 8 }}><CircularProgress /></Box>
-                ) : sessions.length === 0 ? (
+                ) : filteredSessions.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
-                        {sessions.map(session => (
+                        {filteredSessions.map(session => (
                             <EventCardBase
                                 key={session._id}
                                 event={toSessionCard(session)}

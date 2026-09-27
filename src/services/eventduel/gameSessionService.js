@@ -1,10 +1,12 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { getExportFilename } from "@/utils/exportFilename";
 
-// Get all sessions
-export const getAllSessions = withApiHandler(async (gameSlug, page = 1, limit = 5) => {
+// Get all sessions — returns the first batch + total; the rest streams in
+// over the gameResultsProgress socket event.
+export const getAllSessions = withApiHandler(async (gameSlug) => {
   const { data } = await api.get("/eventduel/sessions", {
-    params: { gameSlug, page, limit },
+    params: { gameSlug },
   });
   return data;
 });
@@ -86,7 +88,7 @@ export const getLeaderboard = withApiHandler(async (gameSlug) => {
 export const exportResults = async (gameSlug) => {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
+    const { data, headers } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
       responseType: "blob",
       params: { timezone },
     });
@@ -94,7 +96,7 @@ export const exportResults = async (gameSlug) => {
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `PvP game results for ${gameSlug}.xlsx`);
+    link.setAttribute("download", getExportFilename(headers, `PvP game results for ${gameSlug}.xlsx`));
     document.body.appendChild(link);
     link.click();
     link.remove();

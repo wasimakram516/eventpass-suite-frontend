@@ -30,6 +30,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import EventCardBase from "@/components/cards/EventCard";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 export const eventTranslations = {
@@ -292,14 +293,11 @@ export function EventsPage({
           description={t.pageDescription}
           actions={(
             <>
-            {searchTerm && (
-              <Button
-                variant="outlined"
-                onClick={handleShowAllEvents}
-              >
-                {t.showAllEvents}
-              </Button>
-            )}
+            <AuditSearchClearButton
+              visible={Boolean(searchTerm)}
+              onClear={handleShowAllEvents}
+              label={t.showAllEvents}
+            />
             {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"

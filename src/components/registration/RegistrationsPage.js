@@ -34,6 +34,7 @@ dayjs.extend(utc);
 import FilterDialog from "@/components/modals/FilterModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
@@ -1651,6 +1652,10 @@ export function RegistrationsPage({
           "& > *": { flexShrink: 0 },
         }}
       >
+        <AuditSearchClearButton
+          visible={Boolean(rawSearch)}
+          onClear={() => { setRawSearch(""); setSearchTerm(""); }}
+        />
         {canCreate && (
           <Button
             variant="contained"

@@ -148,7 +148,7 @@ export default function CrossZeroLobby() {
               size="large"
               fullWidth
               onClick={handleAI}
-              startIcon={<ICONS.play />}
+              startIcon={<ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
               sx={{
                 ...getStartIconSpacing(dir),
                 py: 1.5,
@@ -167,7 +167,7 @@ export default function CrossZeroLobby() {
               fullWidth
               onClick={handlePvP}
               disabled={starting}
-              startIcon={starting ? null : <ICONS.play />}
+              startIcon={starting ? null : <ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
               sx={{
                 ...getStartIconSpacing(dir),
                 py: 1.5,

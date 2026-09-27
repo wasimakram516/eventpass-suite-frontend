@@ -25,6 +25,7 @@ import RemoveModeratorIcon from "@mui/icons-material/RemoveModerator";
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import UserFormModal from "@/components/modals/UserFormModal";
 import {
@@ -865,6 +866,7 @@ export default function UsersPage() {
             alignItems: { xs: "stretch", md: "flex-end" },
           }}
         >
+          <AuditSearchClearButton visible={Boolean(searchQuery)} onClear={() => setSearchQuery("")} />
           <Stack
             direction="row"
             spacing={1}

@@ -10,10 +10,6 @@ import {
   Tooltip,
   Divider,
   Pagination,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import {
@@ -27,15 +23,19 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ResultsToolbar from "@/components/results/ResultsToolbar";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useDebouncedSearch from "@/hooks/useDebouncedSearch";
+import { useGameResultsStream } from "@/hooks/useGameResultsSocket";
 import { getGameBySlug } from "@/services/tapmatch/gameService";
 import {
   getLeaderboard,
   exportResults,
 } from "@/services/tapmatch/playerService";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -43,6 +43,7 @@ const translations = {
   en: {
     resultsTitle: "Results for",
     totalPlayers: "Total Players:",
+    playOf: "Play {n} of {m}",
     exportResults: "Export Results",
     exportTooltip: "Export Results",
     matchesLabel: "Matches",
@@ -56,11 +57,13 @@ const translations = {
     showing: "Showing",
     of: "of",
     records: "records",
-    perPage: "Per page",
+    perPage: "Records per page",
+    searchPlaceholder: "Search...",
   },
   ar: {
     resultsTitle: "نتائج",
     totalPlayers: "إجمالي اللاعبين:",
+    playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
     exportTooltip: "تصدير النتائج",
     matchesLabel: "التطابقات",
@@ -74,7 +77,8 @@ const translations = {
     showing: "عرض",
     of: "من",
     records: "سجل",
-    perPage: "لكل صفحة",
+    perPage: "السجلات لكل صفحة",
+    searchPlaceholder: "بحث...",
   },
 };
 
@@ -87,6 +91,18 @@ function playerMatchesSearch(player, term) {
   return haystack.includes(t);
 }
 
+// A linked registration counts as one player no matter how many plays; an
+// unlinked play counts on its own.
+function countUniquePlayers(rows) {
+  const linked = new Set();
+  let unlinked = 0;
+  for (const row of rows || []) {
+    if (row.eventRegRegistrationId) linked.add(String(row.eventRegRegistrationId));
+    else unlinked += 1;
+  }
+  return linked.size + unlinked;
+}
+
 export default function TapMatchResultsPage() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
@@ -94,27 +110,27 @@ export default function TapMatchResultsPage() {
   const { t, dir, language } = useI18nLayout(translations);
   const canExport = useHasPermission("tapmatch", "export");
   const [game, setGame] = useState(null);
-  const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchInitialized, setSearchInitialized] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [uniquePlayers, setUniquePlayers] = useState(0);
+  const [gameId, setGameId] = useState(null);
 
-  useEffect(() => {
-    if (!searchInitialized) {
-      const param = searchParams.get("search");
-      if (param) {
-        setSearchTerm(param.trim());
-        setPage(1);
-      }
-      setSearchInitialized(true);
-    }
-  }, [searchInitialized, searchParams]);
+  const { searchTerm, rawSearch, setRawSearch } = useDebouncedSearch({
+    initial: searchParams.get("search") || "",
+    onCommit: () => setPage(1),
+  });
+
+  // Accumulate streamed batches (and stale-guard against a reset) into the
+  // existing list, then let the "load more" indicator follow the stream.
+  const { rows: players, setRows: setPlayers, loadingMore } = useGameResultsStream({
+    gameId,
+    getId: (row) => String(row.sessionId || row._id),
+  });
 
   const filteredPlayers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -125,6 +141,7 @@ export default function TapMatchResultsPage() {
   const useSearchMode = Boolean(searchTerm.trim());
   const displayPlayers = useSearchMode ? filteredPlayers : players;
   const displayTotal = useSearchMode ? filteredPlayers.length : totalRecords;
+  const displayUniquePlayers = useSearchMode ? countUniquePlayers(filteredPlayers) : uniquePlayers;
   const displayTotalPages = useSearchMode
     ? Math.ceil(filteredPlayers.length / limit) || 1
     : totalPages;
@@ -136,17 +153,13 @@ export default function TapMatchResultsPage() {
         const gameData = await getGameBySlug(gameSlug);
         if (gameData) {
           setGame(gameData);
-          if (searchTerm.trim()) {
-            const leaderboard = await getLeaderboard(gameData._id, 1, 1000);
-            setPlayers(leaderboard.results || []);
-            setTotalPages(1);
-            setTotalRecords((leaderboard.results || []).length);
-          } else {
-            const leaderboard = await getLeaderboard(gameData._id, page, limit);
-            setPlayers(leaderboard.results || []);
-            setTotalPages(leaderboard.totalPages || 0);
-            setTotalRecords(leaderboard.total || 0);
-          }
+          setGameId(gameData._id);
+          const leaderboard = await getLeaderboard(gameData._id);
+          const rows = leaderboard.results || [];
+          setPlayers(rows);
+          setUniquePlayers(leaderboard.uniquePlayers ?? countUniquePlayers(rows));
+          setTotalPages(leaderboard.total ? Math.ceil(leaderboard.total / limit) : 0);
+          setTotalRecords(leaderboard.total || rows.length);
         }
       } catch (err) {
         showMessage(t.errorLoading, "error");
@@ -155,7 +168,7 @@ export default function TapMatchResultsPage() {
       }
     };
     if (gameSlug) fetchGameAndResults();
-  }, [gameSlug, page, limit, searchTerm]);
+  }, [gameSlug, limit]);
 
   const handleExport = async () => {
     if (!game) return;
@@ -206,7 +219,7 @@ export default function TapMatchResultsPage() {
               <Typography variant="body2" sx={{
                 color: "text.secondary"
               }}>
-                {t.totalPlayers} <strong>{displayTotal}</strong>
+                {t.totalPlayers} <strong>{toArabicDigits(displayUniquePlayers, language)}</strong>
               </Typography>
             </Box>
 
@@ -241,43 +254,25 @@ export default function TapMatchResultsPage() {
           </Box>
 
           <Divider sx={{ mt: 2 }} />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              mt: 2,
-              gap: 2,
+          <ResultsToolbar
+            dir={dir}
+            showing={
+              <>
+                {t.showing} <strong>{fromRecord}</strong>–
+                <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
+                {t.records}
+              </>
+            }
+            searchTerm={rawSearch}
+            onSearchChange={setRawSearch}
+            perPage={limit}
+            onPerPageChange={(value) => {
+              setLimit(value);
+              setPage(1);
             }}
-          >
-            {/* Record range info */}
-            <Typography variant="body2" sx={{
-              color: "text.secondary"
-            }}>
-              {t.showing} <strong>{fromRecord}</strong>–
-              <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
-              {t.records}
-            </Typography>
-            {/* Per page selector */}
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t.perPage}</InputLabel>
-              <Select
-                value={limit}
-                label={t.perPage}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-              >
-                {[5, 10, 15, 20, 50].map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {opt}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
+            perPageLabel={t.perPage}
+            searchPlaceholder={t.searchPlaceholder}
+          />
         </Box>
 
         {/* Loading / Data Section */}
@@ -324,6 +319,26 @@ export default function TapMatchResultsPage() {
                       }}>
                       #{(page - 1) * limit + (i + 1)} • {p.name}
                     </Typography>
+
+                    {p.email && p.email !== p.name ? (
+                      <Typography
+                        variant="body2"
+                        sx={{ display: "block", color: "text.secondary", mb: 1, wordBreak: "break-word" }}
+                      >
+                        {p.email}
+                      </Typography>
+                    ) : null}
+
+                    {p.playNumber ? (
+                      <Typography
+                        variant="caption"
+                        sx={{ display: "block", color: "text.secondary", mb: 1 }}
+                      >
+                        {t.playOf
+                          .replace("{n}", toArabicDigits(p.playNumber, language))
+                          .replace("{m}", toArabicDigits(p.totalPlays, language))}
+                      </Typography>
+                    ) : null}
 
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 1 }}
@@ -417,6 +432,12 @@ export default function TapMatchResultsPage() {
                 onChange={(e, val) => setPage(val)}
               />
             </Box>
+
+            {loadingMore && (
+              <Box sx={{ textAlign: "center", my: 2 }}>
+                <CircularProgress size={20} />
+              </Box>
+            )}
           </>
         )}
       </Container>

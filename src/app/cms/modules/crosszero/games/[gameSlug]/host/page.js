@@ -307,7 +307,7 @@ export default function CrossZeroHostPage() {
           <Button
             variant="contained"
             color="success"
-            startIcon={<ICONS.play />}
+            startIcon={<ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
             onClick={handleStartSession}
             disabled={starting}
             sx={getStartIconSpacing(dir)}
@@ -321,7 +321,7 @@ export default function CrossZeroHostPage() {
           <Button
             variant="contained"
             color={bothPlayersJoined ? "warning" : "inherit"}
-            startIcon={bothPlayersJoined ? <ICONS.play /> : null}
+            startIcon={bothPlayersJoined ? <ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} /> : null}
             onClick={handleActivate}
             disabled={!bothPlayersJoined || activating}
             sx={getStartIconSpacing(dir)}

@@ -31,6 +31,7 @@ import {
 } from "@mui/material";
 import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -763,6 +764,7 @@ export default function WhatsAppTemplatesPage() {
           spacing={1}
           sx={{ flexShrink: 0, alignItems: { xs: "stretch", sm: "center" } }}
         >
+          <AuditSearchClearButton visible={Boolean(search)} onClear={() => setSearch("")} />
           <SearchField
             value={search}
             onChange={setSearch}

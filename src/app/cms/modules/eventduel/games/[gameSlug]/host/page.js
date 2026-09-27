@@ -28,6 +28,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -124,7 +125,7 @@ const translations = {
 export default function HostDashboard() {
   const router = useRouter();
   const { gameSlug } = useParams();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
   const theme = useTheme();
   const cz = theme.palette.crosszero;
 
@@ -598,7 +599,7 @@ export default function HostDashboard() {
                       color: "info.main",
                     }}
                   >
-                    {localTime}
+{toArabicDigits(localTime, language)}
                   </Box>
                   <Typography
                     variant="caption"
@@ -807,13 +808,13 @@ export default function HostDashboard() {
                                 fontWeight: "bold",
                                 color: "common.white"
                               }}>
-                              {team.teamId?.name || `${t.teamMode} ${idx + 1}`}
+                              {team.teamId?.name || `${t.teamMode} ${toArabicDigits(idx + 1, language)}`}
                             </Typography>
                             <Typography
                               variant="body2"
                               sx={{ color: cz.pendingSecondaryText }}
                             >
-                              {t.joined}: {joined} {t.of} {totalRequired}{" "}
+                              {t.joined}: {toArabicDigits(joined, language)} {t.of} {toArabicDigits(totalRequired, language)}{" "}
                               {t.players}
                             </Typography>
 
@@ -861,7 +862,7 @@ export default function HostDashboard() {
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="body2" sx={{ opacity: 0.9 }}>
                       {isTeamMode ? t.teamAbandonNotice : t.autoCloseNotice}{" "}
-                      <b>{abandonRemaining}</b> {t.seconds}.
+                      <b>{toArabicDigits(abandonRemaining, language)}</b> {t.seconds}.
                     </Typography>
                   </Box>
                 ) : null}
@@ -1011,7 +1012,7 @@ export default function HostDashboard() {
                                     color: "text.secondary"
                                   }}
                                 >
-                                  {t.score}: {player1?.score ?? 0}
+                                  {t.score}: {toArabicDigits(player1?.score ?? 0, language)}
                                 </Typography>
                               </Box>
 
@@ -1029,7 +1030,7 @@ export default function HostDashboard() {
                                   }}
                                 >
                                   {t.attempted}:{" "}
-                                  {player1?.attemptedQuestions ?? 0}
+                                  {toArabicDigits(player1?.attemptedQuestions ?? 0, language)}
                                 </Typography>
                               </Box>
                               <Box
@@ -1047,8 +1048,8 @@ export default function HostDashboard() {
                                 >
                                   {t.timeTaken}:{" "}
                                   {player1?.timeTaken != null
-                                    ? `${player1.timeTaken}s`
-                                    : "0s"}
+                                    ? `${toArabicDigits(player1.timeTaken, language)}s`
+                                    : `${toArabicDigits(0, language)}s`}
                                 </Typography>
                               </Box>
                             </Box>
@@ -1135,7 +1136,7 @@ export default function HostDashboard() {
                                     color: "text.secondary"
                                   }}
                                 >
-                                  {t.score}: {player2?.score ?? 0}
+                                  {t.score}: {toArabicDigits(player2?.score ?? 0, language)}
                                 </Typography>
                                 <ICONS.leaderboard fontSize="small" />
                               </Box>
@@ -1153,7 +1154,7 @@ export default function HostDashboard() {
                                   }}
                                 >
                                   {t.attempted}:{" "}
-                                  {player2?.attemptedQuestions ?? 0}
+                                  {toArabicDigits(player2?.attemptedQuestions ?? 0, language)}
                                 </Typography>
                                 <ICONS.assignment fontSize="small" />
                               </Box>
@@ -1172,8 +1173,8 @@ export default function HostDashboard() {
                                 >
                                   {t.timeTaken}:{" "}
                                   {player2?.timeTaken != null
-                                    ? `${player2.timeTaken}s`
-                                    : "0s"}
+                                    ? `${toArabicDigits(player2.timeTaken, language)}s`
+                                    : `${toArabicDigits(0, language)}s`}
                                 </Typography>
                                 <ICONS.time fontSize="small" />
                               </Box>
@@ -1271,7 +1272,7 @@ export default function HostDashboard() {
                                   color: "text.primary",
                                   wordBreak: "break-word"
                                 }}>
-                                {team.teamId?.name || `${t.teams} ${idx + 1}`}
+                                {team.teamId?.name || `${t.teams} ${toArabicDigits(idx + 1, language)}`}
                               </Typography>
 
                               {/* Team Totals */}
@@ -1285,7 +1286,10 @@ export default function HostDashboard() {
                                   justifyContent: "center",
                                   alignItems: "center",
                                   flexWrap: "wrap",
-                                  bgcolor: "common.white",
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === "dark"
+                                      ? "rgba(255,255,255,0.08)"
+                                      : "common.white",
                                   borderRadius: 2,
                                   py: 0.7,
                                   px: 1.5
@@ -1307,7 +1311,7 @@ export default function HostDashboard() {
                                     }}
                                   >
                                     {t.totalScore}:{" "}
-                                    <b>{team.totalScore ?? 0}</b>
+                                    <b>{toArabicDigits(team.totalScore ?? 0, language)}</b>
                                   </Typography>
                                 </Box>
                                 <Box
@@ -1324,7 +1328,7 @@ export default function HostDashboard() {
                                     }}
                                   >
                                     {t.averageTime}:{" "}
-                                    <b>{team.avgTimeTaken ?? 0}s</b>
+                                    <b>{toArabicDigits(team.avgTimeTaken ?? 0, language)}s</b>
                                   </Typography>
                                 </Box>
                                 <Box
@@ -1344,7 +1348,7 @@ export default function HostDashboard() {
                                     }}
                                   >
                                     {t.averageAttempted}:{" "}
-                                    <b>{team.avgAttemptedQuestions ?? 0}</b>
+                                    <b>{toArabicDigits(team.avgAttemptedQuestions ?? 0, language)}</b>
                                   </Typography>
                                 </Box>
                               </Stack>
@@ -1402,10 +1406,10 @@ export default function HostDashboard() {
                                       sx={{
                                         alignItems: "center",
 
-                                        justifyContent: {
-                                          xs: "flex-start",
-                                          sm: "flex-end",
-                                        },
+                                        justifyContent:
+                                          dir === "rtl"
+                                            ? "flex-end"
+                                            : { xs: "flex-start", sm: "flex-end" },
 
                                         flexWrap: "wrap",
                                         width: { xs: "100%", sm: "auto" }
@@ -1418,7 +1422,7 @@ export default function HostDashboard() {
                                         }}>
                                         <ICONS.leaderboard fontSize="small" />
                                         <Typography variant="caption">
-                                          {t.score}: {p.score ?? 0}
+                                          {t.score}: {toArabicDigits(p.score ?? 0, language)}
                                         </Typography>
                                       </Box>
                                       <Box
@@ -1430,7 +1434,7 @@ export default function HostDashboard() {
                                         <ICONS.assignment fontSize="small" />
                                         <Typography variant="caption">
                                           {t.attempted}:{" "}
-                                          {p.attemptedQuestions ?? 0}
+                                          {toArabicDigits(p.attemptedQuestions ?? 0, language)}
                                         </Typography>
                                       </Box>
                                       <Box
@@ -1441,7 +1445,7 @@ export default function HostDashboard() {
                                         }}>
                                         <ICONS.time fontSize="small" />
                                         <Typography variant="caption">
-                                          {t.timeTaken}: {p.timeTaken ?? 0}s
+                                          {t.timeTaken}: {toArabicDigits(p.timeTaken ?? 0, language)}s
                                         </Typography>
                                       </Box>
                                     </Stack>

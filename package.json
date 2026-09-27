@@ -8,7 +8,8 @@
     "build": "node scripts/generateFonts.js && next build --webpack",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --experimental-vm-modules --test \"src/**/*.test.js\" \"src/**/*.test.mjs\"",
+    "audit:security": "npm audit --audit-level=high"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -22,12 +23,12 @@
     "@react-pdf/renderer": "^4.5.1",
     "ambient-cbg": "^1.0.4",
     "arabic-reshaper": "^1.1.0",
-    "axios": "^1.16.1",
+    "axios": "^1.18.1",
     "dayjs": "^1.11.20",
     "framer-motion": "^12.40.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
-    "next": "16.2.6",
+    "next": "16.3.6",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.3.289",
     "qr-scanner": "^1.4.2",
@@ -41,12 +42,12 @@
     "react-signature-canvas": "^1.1.0-alpha.2",
     "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@welldone-software/why-did-you-render": "^10.0.1",
     "eslint": "^10",
-    "eslint-config-next": "16.2.6"
+    "eslint-config-next": "16.3.6"
   }
 }

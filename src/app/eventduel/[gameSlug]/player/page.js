@@ -26,6 +26,8 @@ const translations = {
     selectTeam: "Select a team before playing",
     noSessionAvailable:
       "No session is available to join. Please wait for the admin to start a session.",
+    slotAlreadyTaken: "This slot is already taken. Please choose the other side.",
+    teamAlreadyFull: "This team is already full. Please choose another team.",
     player1: "Player 1",
     player2: "Player 2",
     connected: "Connected",
@@ -36,6 +38,8 @@ const translations = {
     selectTeam: "اختر الفريق قبل اللعب",
     noSessionAvailable:
       "لا توجد جلسة متاحة للانضمام. يرجى الانتظار حتى يبدأ المدير الجلسة.",
+    slotAlreadyTaken: "هذا المقعد محجوز بالفعل. يرجى اختيار الجانب الآخر.",
+    teamAlreadyFull: "هذا الفريق ممتلئ بالفعل. يرجى اختيار فريق آخر.",
     player1: "اللاعب الأول",
     player2: "اللاعب الثاني",
     connected: "متصل",
@@ -107,6 +111,22 @@ export default function PlayerSelection() {
       } finally {
         setStarting(false);
       }
+      router.push(`/eventduel/${gameSlug}/player/details`);
+      return;
+    }
+
+    // Slot / team already taken in the current pending session — surface the
+    // error here instead of letting the player proceed to details.
+    if (game?.isTeamMode) {
+      const teamSlot = pendingSession.teams?.find((ts) => String(ts.teamId?._id || ts.teamId) === String(selectedTeamId));
+      const perTeam = game.playersPerTeam || 1;
+      if (teamSlot && (teamSlot.players?.length || 0) >= perTeam) {
+        showMessage(t.teamAlreadyFull, "error");
+        return;
+      }
+    } else if (pendingSession.players?.some((p) => p.playerType === selectedPlayer)) {
+      showMessage(t.slotAlreadyTaken, "error");
+      return;
     }
 
     router.push(`/eventduel/${gameSlug}/player/details`);
@@ -371,14 +391,16 @@ export default function PlayerSelection() {
         {(!selectedPlayer && !game?.isTeamMode) ||
         (game?.isTeamMode && !selectedTeamId) ? (
           <Box
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.6)",
+            sx={(theme) => ({
+              backgroundColor: theme.palette.mode === "dark"
+                ? "rgba(26,34,38,0.75)"
+                : "rgba(255,255,255,0.75)",
               mt: 3,
               px: 3,
               py: 2,
               borderRadius: "12px",
               textAlign: "center",
-            }}
+            })}
           >
             <Typography
               variant="body1"
