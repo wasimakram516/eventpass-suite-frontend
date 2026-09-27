@@ -47,6 +47,7 @@ import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { useParams, useSearchParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -1422,8 +1423,12 @@ export default function ViewRegistrations() {
             width: "100%",
             flexWrap: "wrap",
             columnGap: 1.5,
-            rowGap: 1.5
+          rowGap: 1.5
           }]}>
+          <AuditSearchClearButton
+            visible={Boolean(rawSearch)}
+            onClear={() => { setRawSearch(""); setSearchTerm(""); }}
+          />
           <TextField
             size="small"
             variant="outlined"

@@ -10,6 +10,7 @@ import {
 import GameFormModal from "@/components/modals/GameFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 
 import {
   getGamesByBusiness,
@@ -190,6 +191,7 @@ export default function CrossZeroGamesPage() {
               }}>{t.gamesDescription}</Typography>
             </Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" }, alignItems: "center", justifyContent: "flex-end", gap: dir === "rtl" ? 2 : 1 }}>
+              <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
               {(user?.role === "admin" || user?.role === "superadmin") && (
                 <Button variant="outlined" startIcon={<ICONS.business />} onClick={() => setDrawerOpen(true)} sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", sm: "auto" } }}>
                   {t.selectBusiness}

@@ -33,6 +33,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 const translations = {
@@ -311,11 +312,11 @@ export default function EventsPage() {
                 width: { xs: "100%", sm: "auto" },
               }}
           >
-              {searchTerm && (
-                <Button variant="outlined" onClick={handleShowAllEvents}>
-                  {t.showAllEvents}
-                </Button>
-              )}
+              <AuditSearchClearButton
+                visible={Boolean(searchTerm)}
+                onClear={handleShowAllEvents}
+                label={t.showAllEvents}
+              />
               {(user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"

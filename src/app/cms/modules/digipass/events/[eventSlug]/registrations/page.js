@@ -44,6 +44,7 @@ import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService
 
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams, useSearchParams } from "next/navigation";
@@ -1012,6 +1013,10 @@ export default function ViewRegistrations() {
                             columnGap: 1.5,
                             rowGap: 1.5
                         }]}>
+                        <AuditSearchClearButton
+                            visible={Boolean(rawSearch)}
+                            onClear={() => { setRawSearch(""); setSearchTerm(""); }}
+                        />
                         <TextField
                             size="small"
                             variant="outlined"
@@ -1796,4 +1801,3 @@ export default function ViewRegistrations() {
         </Container>
     );
 }
-

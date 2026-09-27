@@ -10,6 +10,7 @@ import {
 } from "@/services/memorywall/wallConfigService";
 import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import {
   Box,
   Button,
@@ -212,6 +213,11 @@ export default function WallConfigsPage() {
     });
   }, [wallConfigs, searchTerm]);
 
+  const handleShowAllWalls = () => {
+    setSearchTerm("");
+    router.replace("/cms/modules/memorywall/walls");
+  };
+
   const handleBusinessSelect = (businessSlug) => {
     setSelectedBusiness(businessSlug);
     fetchWallConfigs(businessSlug);
@@ -319,6 +325,10 @@ export default function WallConfigsPage() {
             gap: dir === "rtl" ? 2 : 1,
             my: 3
           }}>
+          <AuditSearchClearButton
+            visible={Boolean(searchTerm)}
+            onClear={handleShowAllWalls}
+          />
           {(user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"

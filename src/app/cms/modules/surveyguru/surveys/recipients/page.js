@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import SurveyBulkNotificationModal from "@/components/modals/SurveyBulkNotificationModal";
@@ -801,6 +802,8 @@ export default function RecipientsManagePage() {
               {t.subtitle}
             </Typography>
           </Box>
+
+          <AuditSearchClearButton />
 
           <Box
             sx={{
