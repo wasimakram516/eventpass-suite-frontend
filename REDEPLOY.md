@@ -8,3 +8,4 @@ Format: `RD <TICKET-ID> <dd MMM yyyy>`
 - RD EP-198 20 Sep 2026
 - RD EP-240 23 Sep 2026
 - RD EP-240 23 Sep 2026
+- RD EP-245 27 Sep 2026
