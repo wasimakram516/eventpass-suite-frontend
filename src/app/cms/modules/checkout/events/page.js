@@ -6,6 +6,7 @@ import {
 } from "@/components/registration/EventsPage";
 import {
   getAllCheckoutEventsByBusiness,
+  getCheckoutEventBySlugForCms,
   createCheckoutEvent,
   updateCheckoutEvent,
   deleteCheckoutEvent,
@@ -19,19 +20,24 @@ const checkoutTranslations = {
     pageTitle: "Manage Ticketed Events",
     pageDescription: "Create and manage paid events, ticket types, fees, and VAT.",
     createEvent: "Create Ticketed Event",
-    viewRegs: "Manage checkout",
+    viewRegs: "View Registrations",
+    promoCodes: "Promo Codes",
+    payments: "Payments",
   },
   ar: {
     ...eventTranslations.ar,
     pageTitle: "إدارة الفعاليات المدفوعة",
     pageDescription: "أنشئ وأدر الفعاليات المدفوعة وأنواع التذاكر والرسوم وضريبة القيمة المضافة.",
     createEvent: "إنشاء فعالية مدفوعة",
-    viewRegs: "إدارة الدفع",
+    viewRegs: "عرض التسجيلات",
+    promoCodes: "رموز الخصم",
+    payments: "المدفوعات",
   },
 };
 
 const checkoutEventService = {
   getAllEventsByBusiness: getAllCheckoutEventsByBusiness,
+  getEventBySlugForCms: getCheckoutEventBySlugForCms,
   createEvent: createCheckoutEvent,
   updateEvent: updateCheckoutEvent,
   deleteEvent: deleteCheckoutEvent,
@@ -47,7 +53,9 @@ export default function CheckoutEventsPage() {
         routeBase="/cms/modules/checkout/events"
         forcePaid
         showEventLinks
-        viewRouteSuffix=""
+        viewRouteSuffix="/registrations"
+        showPromoCodes
+        showPayments
         getPublicEventUrl={(event) =>
           `/checkout/${event.defaultLanguage || "en"}/event/${event.slug}`
         }

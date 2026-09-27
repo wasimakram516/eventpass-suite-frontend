@@ -26,7 +26,6 @@ export default function CheckoutPaymentsDashboardPage() {
       <PaymentsPage
         paymentService={checkoutPaymentService}
         getRegistrationInvoice={getRegistrationInvoice}
-        liveUpdates={false}
         canViewInvoice={canViewInvoice}
         canExport={canViewInvoice}
       />

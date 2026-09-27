@@ -35,6 +35,7 @@ export default function EventCardBase({
   onClone,
   onInsights,
   onPromoCodes,
+  onPayments,
   onViewResults,
   onViewFullScreen,
 }) {
@@ -271,6 +272,20 @@ export default function EventCardBase({
               }}
             >
               <ICONS.promoCode />
+            </IconButton>
+          </Tooltip>
+        )}
+        {onPayments && (
+          <Tooltip title={t.payments || "Payments"}>
+            <IconButton
+              color="success"
+              onClick={onPayments}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.payment />
             </IconButton>
           </Tooltip>
         )}

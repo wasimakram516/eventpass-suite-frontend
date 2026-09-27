@@ -34,12 +34,14 @@ dayjs.extend(utc);
 import FilterDialog from "@/components/modals/FilterModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
+import useEmailNotificationSender from "@/hooks/useEmailNotificationSender";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import RegistrationFieldList from "@/components/cards/RegistrationFieldList";
@@ -383,7 +385,7 @@ export function RegistrationsPage({
   const breadcrumbs = moduleKey === "checkout"
     ? [
       { label: language === "ar" ? "الدفع" : "Checkout", href: routeBase },
-      { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}` },
+      { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}/registrations` },
       { label: t.registrations },
     ]
     : undefined;
@@ -419,6 +421,13 @@ export function RegistrationsPage({
 
   const [sendingEmails, setSendingEmails] = useState(false);
   const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+  const handleSendEmailNotification = useEmailNotificationSender({
+    sendEmails: sendBulkEmails,
+    eventSlug,
+    setSending: setSendingEmails,
+    closeModal: () => setBulkEmailModalOpen(false),
+    showMessage,
+  });
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingReg, setEditingReg] = useState(null);
@@ -1642,6 +1651,10 @@ export function RegistrationsPage({
           "& > *": { flexShrink: 0 },
         }}
       >
+        <AuditSearchClearButton
+          visible={Boolean(rawSearch)}
+          onClear={() => { setRawSearch(""); setSearchTerm(""); }}
+        />
         {canCreate && (
           <Button
             variant="contained"
@@ -2728,6 +2741,7 @@ export function RegistrationsPage({
       />
       <BulkEmailModal
         open={bulkEmailModalOpen}
+        event={eventDetails}
         isApprovalBased={eventDetails?.requiresApproval}
         useApprovedRejected={true}
         canSendEmail={canSendEmail}
@@ -2737,52 +2751,7 @@ export function RegistrationsPage({
             setBulkEmailModalOpen(false);
           }
         }}
-        onSendEmail={async (data) => {
-          if (data.type === "default") {
-            setSendingEmails(true);
-            setBulkEmailModalOpen(false);
-            const result = await sendBulkEmails(eventSlug, {
-              statusFilter: data.statusFilter || "all",
-              emailSentFilter: data.emailSentFilter || "all",
-              whatsappSentFilter: data.whatsappSentFilter || "all",
-            });
-            if (result?.error) {
-              setSendingEmails(false);
-              showMessage(
-                result.message || "Failed to send notifications",
-                "error",
-              );
-            }
-          } else {
-            if (!data.subject || !data.body) {
-              showMessage(
-                "Subject and body are required for custom notifications",
-                "error",
-              );
-              return;
-            }
-            setSendingEmails(true);
-            setBulkEmailModalOpen(false);
-            const result = await sendBulkEmails(
-              eventSlug,
-              {
-                subject: data.subject,
-                body: data.body,
-                statusFilter: data.statusFilter || "all",
-                emailSentFilter: data.emailSentFilter || "all",
-                whatsappSentFilter: data.whatsappSentFilter || "all",
-              },
-              data.file,
-            );
-            if (result?.error) {
-              setSendingEmails(false);
-              showMessage(
-                result.message || "Failed to send notifications",
-                "error",
-              );
-            }
-          }
-        }}
+        onSendEmail={handleSendEmailNotification}
         onSendWhatsApp={async (data) => {
           if (data.type === "custom") {
             if (!data.subject || !data.body) {
@@ -2799,6 +2768,7 @@ export function RegistrationsPage({
             eventSlug,
             {
               type: data.type || "default",
+              messageId: data.messageId,
               subject: data.subject,
               body: data.body,
               statusFilter: data.statusFilter || "all",

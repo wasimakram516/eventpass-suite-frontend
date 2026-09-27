@@ -31,6 +31,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useMemo } from "react";
 import QuestionFormModal from "@/components/modals/QuestionFormModal";
@@ -297,6 +298,7 @@ export default function QuestionsPage() {
                 width: { xs: "100%", sm: "auto" },
               }}
             >
+              <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
               {/* Add Question */}
               {canCreate && (
                 <Button

@@ -57,7 +57,6 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LogSnapshotModal from "@/components/modals/LogSnapshotModal";
 import { getRegistrationMeta } from "@/services/eventreg/registrationService";
 import { getPromoCodeMeta } from "@/services/checkout/promoCodeService";
-import { getPollMeta } from "@/services/votecast/pollService";
 import { getQuestionMeta as getQuiznestQuestionMeta } from "@/services/quiznest/questionService";
 import { getQuestionMeta as getEventduelQuestionMeta } from "@/services/eventduel/questionService";
 import { globalSearch as fetchGlobalSearch } from "@/services/globalSearchService";
@@ -421,6 +420,14 @@ export default function LogsPage() {
       return;
     }
 
+    if (moduleName === "WhatsApp") {
+      const params = new URLSearchParams();
+      if (searchValue) params.set("search", searchValue);
+      if (itemType === "WhatsAppDefaultMessage") params.set("tab", "defaults");
+      router.push(`/cms/settings/whatsapp-templates${params.toString() ? `?${params.toString()}` : ""}`);
+      return;
+    }
+
     if (logType === "delete") {
       const trashKey = getTrashModuleKey(moduleName, itemType);
       const params = new URLSearchParams();
@@ -533,20 +540,11 @@ export default function LogsPage() {
       return;
     }
 
-    if (moduleName === "VoteCast" && (itemType === "Event" || itemType === "Poll")) {
-      try {
-        if (log.itemId) {
-          const meta = await getPollMeta(log.itemId);
-          if (meta && !meta.error && meta.slug) {
-            router.push(
-              `/cms/modules/votecast/polls/${meta.slug}/questions${searchQuery}`,
-            );
-            return;
-          }
-        }
-      } catch {
-      }
-      router.push(`/cms/modules/votecast/polls${searchQuery}`);
+    if (moduleName === "VoteCast") {
+      const params = new URLSearchParams();
+      if (searchValue) params.set("search", searchValue);
+      if (businessSlug) params.set("business", businessSlug);
+      router.push(`/cms/modules/votecast/polls${params.toString() ? `?${params.toString()}` : ""}`);
       return;
     }
     if (moduleName === "SurveyGuru") {
@@ -622,7 +620,7 @@ export default function LogsPage() {
     }
 
     if (moduleName === "StageQ") {
-      router.push(`/cms/modules/stageq/queries/questions${searchQuery}`);
+      router.push(`/cms/modules/stageq/sessions${searchQuery}`);
       return;
     }
 
@@ -635,6 +633,7 @@ export default function LogsPage() {
       router.push("/cms/access-control/roles");
       return;
     }
+
 
     if ((moduleName === "User" || moduleName === "Auth") && itemType === "User") {
       router.push(`/cms/users${searchQuery}`);
@@ -751,6 +750,9 @@ export default function LogsPage() {
 
   const getDisplayItemName = (log) => {
     if (log?.itemName) return log.itemName;
+    if (log?.module === "VoteCast" && log?.itemType === "Poll" && log?.snapshot?.title) {
+      return log.snapshot.title;
+    }
     if (log?.itemType === "SurveyRecipient" && log?.itemNameSnapshot) return log.itemNameSnapshot;
     if (log?.itemType === "User") {
       const isDelete = (log.logType || "").toLowerCase() === "delete";

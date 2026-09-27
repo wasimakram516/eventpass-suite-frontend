@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -53,6 +53,7 @@ import LoadingState from "@/components/LoadingState";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import AppCard from "@/components/cards/AppCard";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 
 // Mirrors the backend's TRASH_MODULE_TO_PERMISSION (src/controllers/trashController.js)
 // so the restore button can be hidden — not just disabled — the same way
@@ -199,6 +200,7 @@ const translations = {
 export default function TrashPage() {
   const { dir, align, t, language } = useI18nLayout(translations);
   const locale = language === "ar" ? "ar-SA" : "en-GB";
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
   const theme = useTheme();
@@ -459,6 +461,7 @@ export default function TrashPage() {
     setPageState({});
     setSelectedModule("__ALL__");
     setModuleFilter("__ALL__");
+    router.replace("/cms/trash");
   };
 
   // handler for module name based on key
@@ -972,6 +975,12 @@ export default function TrashPage() {
             width: { xs: "100%", sm: "auto" },
           }}
         >
+          <AuditSearchClearButton
+            visible={activeFilterCount > 0 || Boolean(search)}
+            onClear={handleClearAllFilters}
+            label={t.clearFilters}
+            paramsToClear={["search", "module"]}
+          />
           {/* Search */}
           <TextField
             placeholder={t.searchPlaceholder}

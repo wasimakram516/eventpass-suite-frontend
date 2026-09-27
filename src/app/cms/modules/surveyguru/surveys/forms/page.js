@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -835,6 +836,7 @@ export default function SurveyFormsManagePage() {
             spacing={dir === "rtl" ? 1 : 1}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
+            <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
             <Button
               fullWidth={isMobile}
               sx={

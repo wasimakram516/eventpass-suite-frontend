@@ -29,12 +29,13 @@ export default function usePaymentsSocket() {
       // any still-queued update for it so a pending card can't slip back in.
       paymentRemoved: ({ registrationId, paymentIds }) => {
         if (!registrationId && !(paymentIds?.length)) return;
-        const ids = paymentIds || [];
-        queueRef.current = queueRef.current.filter(
-          (p) =>
-            !ids.includes(p._id) &&
-            (!registrationId || p.registrationId?.toString() !== registrationId.toString())
-        );
+        const ids = (paymentIds || []).map(String);
+        queueRef.current = queueRef.current.filter((p) => {
+          const pId = String(p._id);
+          if (ids.length > 0) return !ids.includes(pId);
+          if (registrationId) return String(p.registrationId) !== String(registrationId);
+          return true;
+        });
         setRemovedPayments((prev) => [...prev, { registrationId, paymentIds: ids }]);
       },
     }),

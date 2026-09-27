@@ -34,6 +34,7 @@ import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";
@@ -745,6 +746,7 @@ const Dashboard = () => {
               width: { xs: "100%", sm: "auto" },
             }}
           >
+            <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
             {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"

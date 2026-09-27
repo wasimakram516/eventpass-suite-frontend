@@ -15,6 +15,11 @@ export const getCheckInEventBySlug = withApiHandler(async (slug) => {
   return data;
 });
 
+export const getCheckInEventBySlugForCms = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/checkin/events/cms/slug/${slug}`);
+  return data;
+});
+
 // Get event by ID (CMS use)
 export const getCheckInEventById = withApiHandler(async (id) => {
   const { data } = await api.get(`/checkin/events/${id}`);
@@ -65,4 +70,3 @@ export const cloneCheckInEvent = withApiHandler(
   },
   { showSuccess: true }
 );
-

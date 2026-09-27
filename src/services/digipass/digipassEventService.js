@@ -15,6 +15,11 @@ export const getDigipassEventBySlug = withApiHandler(async (slug) => {
     return data;
 });
 
+export const getDigipassEventBySlugForCms = withApiHandler(async (slug) => {
+    const { data } = await api.get(`/digipass/events/cms/slug/${slug}`);
+    return data;
+});
+
 // Get event by ID (CMS use)
 export const getDigipassEventById = withApiHandler(async (id) => {
     const { data } = await api.get(`/digipass/events/${id}`);
@@ -47,4 +52,3 @@ export const deleteDigipassEvent = withApiHandler(
     },
     { showSuccess: true }
 );
-

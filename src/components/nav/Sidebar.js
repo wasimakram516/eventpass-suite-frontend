@@ -65,7 +65,14 @@ export default function Sidebar() {
     ...(user?.role === "superadmin"
       ? [{ label: "Global Search", icon: ICONS.search, path: "/cms/global-search" }]
       : []),
-    { label: t.modules, icon: ICONS.module, path: "/cms/modules" },
+    {
+      label: t.modules,
+      icon: ICONS.module,
+      path: "/cms/modules",
+      // The payment dashboard has its own sidebar item, despite its Checkout
+      // URL being nested below the modules route.
+      excludeActivePaths: ["/cms/modules/checkout/payments"],
+    },
     ...(user?.role === "superadmin"
       ? [{
         label: t.accessControl,
@@ -104,7 +111,12 @@ export default function Sidebar() {
 
   const isActive = (path) =>
     path === "/cms" ? pathname === "/cms" : pathname.startsWith(path);
-  const isNavItemActive = (item) => isActive(item.activePath || item.path);
+  const isNavItemActive = (item) => {
+    if (item.excludeActivePaths?.some((path) => pathname.startsWith(path))) {
+      return false;
+    }
+    return isActive(item.activePath || item.path);
+  };
 
   const drawerContent = (
     <Box

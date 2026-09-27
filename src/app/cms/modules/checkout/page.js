@@ -12,7 +12,7 @@ const translations = {
       "Create ticketed events with ticket types, fees, and VAT.",
       "Manage payments, promo codes, and externally recorded payments.",
     ],
-    ctaLabel: "Manage Ticketed Events",
+    ctaLabel: "Manage Checkout Registrations",
   },
   ar: {
     title: "الدفع – الفعاليات المدفوعة والمدفوعات",
@@ -20,7 +20,7 @@ const translations = {
       "أنشئ فعاليات مدفوعة مع أنواع التذاكر والرسوم وضريبة القيمة المضافة.",
       "أدر المدفوعات وأكواد الخصم والمدفوعات المسجلة خارجياً.",
     ],
-    ctaLabel: "إدارة الفعاليات المدفوعة",
+    ctaLabel: "إدارة تسجيلات الدفع",
   },
 };
 

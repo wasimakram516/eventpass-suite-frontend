@@ -3,6 +3,7 @@
 import { EventsPage } from "@/components/registration/EventsPage";
 import {
   getAllPublicEventsByBusiness,
+  getPublicEventBySlugForCms,
   createPublicEvent,
   updatePublicEvent,
   deletePublicEvent,
@@ -11,6 +12,7 @@ import {
 
 const eventService = {
   getAllEventsByBusiness: getAllPublicEventsByBusiness,
+  getEventBySlugForCms: getPublicEventBySlugForCms,
   createEvent: createPublicEvent,
   updateEvent: updatePublicEvent,
   deleteEvent: deletePublicEvent,

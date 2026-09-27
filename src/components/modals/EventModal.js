@@ -40,10 +40,33 @@ import { updateCheckInEventCustomQrWrapper } from "@/services/checkin/checkinEve
 import { updateCheckoutEventCustomQrWrapper } from "@/services/checkout/eventService";
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
+import EmailTemplateWorkspace from "@/components/modals/EmailTemplateWorkspace";
+import TabOptionCheckbox from "@/components/modals/TabOptionCheckbox";
+import { EMAIL_TEMPLATE_REQUIRED_MESSAGES } from "@/utils/emailTemplateMessages";
+import {
+  EMPTY_EMAIL_TEMPLATE_SETTINGS,
+  buildEmailTemplatePayload,
+  getEmailTemplateSettings,
+  getEventModalTabIndices,
+  getTemplateFieldNames,
+  isRichTextEmpty,
+} from "@/utils/emailTemplatePlaceholders";
+import WhatsAppMessagesTab from "@/components/whatsapp/WhatsAppMessagesTab";
+import useWhatsAppCatalog from "@/hooks/useWhatsAppCatalog";
+import {
+  toEditableMessages,
+  toMessagesPayload,
+  validateWhatsAppMessages,
+  moduleKeyForEventType,
+  whatsappEventTypeFor,
+} from "@/utils/whatsappMessages";
+import { useHasPermission } from "@/hooks/usePermission";
+import { useAuth } from "@/contexts/AuthContext";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { convertTimeToLocal, convertTimeFromLocal } from "@/utils/dateUtils";
+import { eventInfoFromEventForm } from "@/utils/emailEventDetails";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import TicketTypesEditor from "@/components/checkout/TicketTypesEditor";
 import FeesVatEditor from "@/components/checkout/FeesVatEditor";
@@ -121,15 +144,20 @@ const translations = {
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirm: "Delete",
     useCustomEmailTemplate: "Use custom email template",
-    emailSubject: "Email Subject",
-    emailBody: "Email Body",
-    placeholderSubject: "Enter email subject",
-    placeholderBody: "Enter email body...",
-    emailSubjectRequired: "Email subject is required when using custom email template.",
-    emailBodyRequired: "Email body is required when using custom email template.",
+    emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.subject,
+    emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.body,
+    emailTemplateTab: "Custom Email",
+    whatsappTab: "WhatsApp Messages",
+    useCustomWhatsAppMessages: "Use custom WhatsApp messages",
+    customWhatsAppMessagesHint:
+      "The WhatsApp messages are set in the WhatsApp Messages tab. When off, the platform default messages are used.",
+    customEmailTemplateHint:
+      "The email content is set in the Custom Email tab, after the input fields are set.",
+    customFieldsHint: "The registration fields are set in the Custom Fields tab.",
     eventDetailsTab: "Event Details",
     organizerDetailsTab: "Organizer Details",
     optionsTab: "Options",
+    ticketsTab: "Tickets & Fees",
     uploadsTab: "Uploads",
     customFieldsTab: "Custom Fields",
     customizeBadgeTab: "Customize Badge",
@@ -286,15 +314,20 @@ const translations = {
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
     useCustomEmailTemplate: "استخدام قالب بريد إلكتروني مخصص",
-    emailSubject: "موضوع البريد الإلكتروني",
-    emailBody: "نص البريد الإلكتروني",
-    placeholderSubject: "أدخل موضوع البريد الإلكتروني",
-    placeholderBody: "أدخل نص البريد الإلكتروني...",
-    emailSubjectRequired: "موضوع البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
-    emailBodyRequired: "نص البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
+    emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.subject,
+    emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.body,
+    emailTemplateTab: "البريد الإلكتروني المخصص",
+    whatsappTab: "رسائل واتساب",
+    useCustomWhatsAppMessages: "استخدام رسائل واتساب مخصصة",
+    customWhatsAppMessagesHint:
+      "يتم إعداد رسائل واتساب في تبويب رسائل واتساب. عند إيقافه، تستخدم الرسائل الافتراضية للمنصة.",
+    customEmailTemplateHint:
+      "يتم تحديد محتوى البريد في تبويب البريد الإلكتروني المخصص بعد تحديد حقول الإدخال.",
+    customFieldsHint: "يتم تحديد حقول التسجيل في تبويب الحقول المخصصة.",
     eventDetailsTab: "تفاصيل الفعالية",
     organizerDetailsTab: "تفاصيل المنظم",
     optionsTab: "الخيارات",
+    ticketsTab: "التذاكر والرسوم",
     uploadsTab: "الرفع",
     customFieldsTab: "الحقول المخصصة",
     customizeBadgeTab: "تخصيص الشارة",
@@ -563,6 +596,9 @@ const EventModal = ({
     useCustomEmailTemplate: false,
     emailTemplateSubject: "",
     emailTemplateBody: "",
+    ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
+    useCustomWhatsAppMessages: false,
+    whatsappMessages: [],
     useCustomQrCode: false,
     customQrSelectedFields: {},
     qrWrapperBackground: null,
@@ -674,6 +710,9 @@ const EventModal = ({
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
+        ...getEmailTemplateSettings(initialValues?.emailTemplate),
+        useCustomWhatsAppMessages: initialValues?.useCustomWhatsAppMessages || false,
+        whatsappMessages: toEditableMessages(initialValues?.whatsappMessages),
         isPaid: forcePaid ? true : allowPaid ? initialValues?.isPaid || false : false,
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
@@ -783,6 +822,9 @@ const EventModal = ({
         useCustomEmailTemplate: false,
         emailTemplateSubject: "",
         emailTemplateBody: "",
+        ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
+        useCustomWhatsAppMessages: false,
+        whatsappMessages: [],
         isPaid: forcePaid,
         ticketTypes: [],
         fees: [],
@@ -836,6 +878,28 @@ const EventModal = ({
     });
   }, [formData.useCustomFields, formData.badgeCustomizations]);
 
+  // The Tickets & Fees tab is injected between Options and Uploads for paid events.
+  const hasTicketsTab = forcePaid || (allowPaid && formData.isPaid);
+  const whatsappEventType = whatsappEventTypeFor({ isClosed, moduleKey });
+  // Configuring an event's WhatsApp messages is for admins and superadmin with
+  // the module's send_whatsapp permission; for anyone else the option is
+  // hidden and the fields are not sent (the backend ignores them too).
+  const { user: currentUser } = useAuth();
+  const hasWhatsAppSend = useHasPermission(moduleKeyForEventType(whatsappEventType), "send_whatsapp");
+  const canConfigureWhatsApp = ["admin", "superadmin"].includes(currentUser?.role) && hasWhatsAppSend;
+  const showWhatsAppTab = canConfigureWhatsApp && formData.useCustomWhatsAppMessages;
+  const tabs = getEventModalTabIndices({ ...formData, useCustomWhatsAppMessages: showWhatsAppTab, hasTicketsTab });
+  const whatsappCatalog = useWhatsAppCatalog([whatsappEventType], open && showWhatsAppTab);
+  const whatsappFieldNames = getTemplateFieldNames(formData);
+  // Messages can only be checked and saved once the library has loaded; until
+  // then the saved messages are left untouched.
+  const whatsappReady = !whatsappCatalog.loading && whatsappCatalog.templatesById.size > 0;
+  const ticketsTabIdx = tabs.tickets;
+  const uploadsTabIdx = tabs.uploads;
+  const customFieldsTabIdx = tabs.customFields;
+  const badgeTabIdx = tabs.badge;
+  const customQrTabIdx = tabs.customQr;
+
   const measureWidths = useCallback(() => {
     setButtonWidths((prev) => {
       const widths = { ...prev };
@@ -854,7 +918,7 @@ const EventModal = ({
 
   const logoButtonRefCallback = useCallback((node) => {
     logoButtonRef.current = node;
-    if (node && activeTab === 3) {
+    if (node && activeTab === uploadsTabIdx) {
       // Measure immediately when button mounts
       setButtonWidths((prev) => ({
         ...prev,
@@ -865,7 +929,7 @@ const EventModal = ({
 
   const backgroundEnButtonRefCallback = useCallback((node) => {
     backgroundEnButtonRef.current = node;
-    if (node && activeTab === 3) {
+    if (node && activeTab === uploadsTabIdx) {
       setButtonWidths((prev) => ({
         ...prev,
         backgroundEn: node.offsetWidth || null,
@@ -875,7 +939,7 @@ const EventModal = ({
 
   const backgroundArButtonRefCallback = useCallback((node) => {
     backgroundArButtonRef.current = node;
-    if (node && activeTab === 3) {
+    if (node && activeTab === uploadsTabIdx) {
       setButtonWidths((prev) => ({
         ...prev,
         backgroundAr: node.offsetWidth || null,
@@ -896,13 +960,13 @@ const EventModal = ({
   }, [open, measureWidths]);
 
   useLayoutEffect(() => {
-    if (open && activeTab === 3) {
+    if (open && activeTab === uploadsTabIdx) {
       measureWidths();
     }
   }, [activeTab, open, measureWidths]);
 
   useEffect(() => {
-    if (open && activeTab === 3 && (formData.logoPreview || formData.backgroundEnPreview || formData.backgroundArPreview)) {
+    if (open && activeTab === uploadsTabIdx && (formData.logoPreview || formData.backgroundEnPreview || formData.backgroundArPreview)) {
       measureWidths();
     }
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview, open, activeTab, measureWidths]);
@@ -1281,6 +1345,9 @@ const EventModal = ({
     return true;
   };
 
+  // The Custom Email tab shows the live preview beside the form.
+  const isEmailTabOpen = formData.useCustomEmailTemplate && activeTab === tabs.emailTemplate;
+
   const validateCurrentTab = () => {
     if (activeTab === 0) {
       if (!formData.name || !formData.startDate || !formData.endDate || !formData.venue) {
@@ -1289,9 +1356,9 @@ const EventModal = ({
       }
     }
 
-    // A Checkout event cannot continue beyond the options tab without a usable
+    // A Checkout event cannot continue beyond the tickets tab without a usable
     // ticket. This matches the final create/update validation.
-    if (activeTab === 2 && forcePaid && !validateRequiredTickets()) {
+    if (activeTab === ticketsTabIdx && forcePaid && !validateRequiredTickets()) {
       return false;
     }
     return true;
@@ -1353,14 +1420,29 @@ const EventModal = ({
       }
     }
 
+    if (showWhatsAppTab && whatsappReady) {
+      const whatsappError = validateWhatsAppMessages(formData.whatsappMessages, {
+        templatesById: whatsappCatalog.templatesById,
+        placeholders: whatsappCatalog.placeholders,
+        fieldNames: whatsappFieldNames,
+      });
+      if (whatsappError) {
+        setActiveTab(tabs.whatsapp);
+        showMessage(whatsappError, "error");
+        return;
+      }
+    }
+
     if (formData.useCustomEmailTemplate) {
       if (!formData.emailTemplateSubject || !formData.emailTemplateSubject.trim()) {
         setEmailTemplateSubjectError(true);
+        setActiveTab(tabs.emailTemplate);
         showMessage(t.emailSubjectRequired, "error");
         return;
       }
-      if (!formData.emailTemplateBody || !formData.emailTemplateBody.trim() || formData.emailTemplateBody === "<p><br></p>" || formData.emailTemplateBody === "<p></p>") {
+      if (isRichTextEmpty(formData.emailTemplateBody)) {
         setEmailTemplateBodyError(true);
+        setActiveTab(tabs.emailTemplate);
         showMessage(t.emailBodyRequired, "error");
         return;
       }
@@ -1601,12 +1683,13 @@ const EventModal = ({
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
+        ...(canConfigureWhatsApp ? { useCustomWhatsAppMessages: formData.useCustomWhatsAppMessages } : {}),
+        ...(showWhatsAppTab && whatsappReady
+          ? { whatsappMessages: toMessagesPayload(formData.whatsappMessages, whatsappCatalog.templatesById) }
+          : {}),
         ...(formData.useCustomEmailTemplate
           ? {
-            emailTemplate: {
-              subject: formData.emailTemplateSubject,
-              body: formData.emailTemplateBody,
-            },
+            emailTemplate: buildEmailTemplatePayload(formData),
           }
           : {}),
         ...(formData.useCustomFields
@@ -1693,7 +1776,7 @@ const EventModal = ({
   return (
     <>
       {/* <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}> */}
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth dir={dir}
         slotProps={{ paper: { sx: { maxHeight: "90vh" } } }}>
         <DialogTitle
           sx={{
@@ -1734,37 +1817,12 @@ const EventModal = ({
                 }
                 if (
                   forcePaid &&
-                  activeTab < 2 &&
-                  newValue > 2 &&
+                  activeTab < ticketsTabIdx &&
+                  newValue > ticketsTabIdx &&
                   !validateRequiredTickets()
                 ) {
                   return;
                 }
-                const uploadsTabIndex = 3;
-                const customFieldsTabIndex = 4;
-                const customizeBadgeTabIndex = formData.useCustomFields ? 5 : 4;
-                const customQrCodeTabIndex = formData.useCustomFields ? 6 : 5;
-
-                if (formData.useCustomQrCode && newValue === customQrCodeTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === customizeBadgeTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === customFieldsTabIndex && formData.useCustomFields) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === uploadsTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
                 setActiveTab(newValue);
               }}
               aria-label="event tabs"
@@ -1773,8 +1831,11 @@ const EventModal = ({
               <Tab label={t.eventDetailsTab} />
               <Tab label={t.organizerDetailsTab} />
               <Tab label={t.optionsTab} />
+              {hasTicketsTab && <Tab label={t.ticketsTab} />}
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
+              {formData.useCustomEmailTemplate && <Tab label={t.emailTemplateTab} />}
+              {showWhatsAppTab && <Tab label={t.whatsappTab} />}
               <Tab label={t.customizeBadgeTab} />
               {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
             </Tabs>
@@ -2240,311 +2301,6 @@ const EventModal = ({
                       />
                     </Box>
                   )}
-
-                  {(forcePaid || (allowPaid && formData.isPaid)) && (
-                    <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2, mt: 1 }}>
-                      <TicketTypesEditor
-                        ticketTypes={formData.ticketTypes}
-                        globalDependentFieldMappings={formData.globalDependentFieldMappings}
-                        onChange={(updates) =>
-                          setFormData((prev) => ({ ...prev, ...updates }))
-                        }
-                        t={t}
-                        required={forcePaid}
-                      />
-
-                      {/* --Ticket dependent field --*/}
-
-                      <Box sx={{ mt: 2, mb: 1 }}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              size="small"
-                              checked={!!formData.dependentFieldsEnabled}
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  dependentFieldsEnabled: e.target.checked,
-                                }))
-                              }
-                              color="primary"
-                            />
-                          }
-                          label={
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {t.addDependentFields}
-                            </Typography>
-                          }
-                        />
-
-                        {formData.dependentFieldsEnabled && (
-                          <Box
-                            sx={{
-                              mt: 1,
-                              p: 2,
-                              bgcolor: "background.default",
-                              border: "1px solid",
-                              borderColor: "divider",
-                              borderRadius: 2,
-                            }}
-                          >
-                            {/* Sub-fields list */}
-                            {(formData.globalDependentFields || []).map((depField, depIdx) => (
-                              <Box
-                                key={depIdx}
-                                sx={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 1,
-                                  alignItems: "center",
-                                  mb: 1.5,
-                                  p: 1.5,
-                                  border: "1px solid",
-                                  borderColor: "divider",
-                                  borderRadius: 1.5,
-                                  bgcolor: "background.paper",
-                                }}
-                              >
-                                <TextField
-                                  size="small"
-                                  placeholder={t.depFieldLabel}
-                                  value={depField.inputName || ""}
-                                  onChange={(e) =>
-                                    setFormData((prev) => {
-                                      const fields = [...(prev.globalDependentFields || [])];
-                                      fields[depIdx] = { ...fields[depIdx], inputName: e.target.value };
-                                      return { ...prev, globalDependentFields: fields };
-                                    })
-                                  }
-                                  sx={{ flex: "1 1 140px" }}
-                                />
-                                <TextField
-                                  select
-                                  size="small"
-                                  label={t.depInputType}
-                                  value={depField.inputType || "text"}
-                                  onChange={(e) =>
-                                    setFormData((prev) => {
-                                      const fields = [...(prev.globalDependentFields || [])];
-                                      fields[depIdx] = { ...fields[depIdx], inputType: e.target.value };
-                                      return { ...prev, globalDependentFields: fields };
-                                    })
-                                  }
-                                  sx={{ flex: "1 1 110px" }}
-                                  slotProps={{ select: { native: true } }}
-                                >
-                                  {[
-                                    { value: "text", label: t.textType },
-                                    { value: "number", label: t.numberType },
-                                    { value: "file", label: t.fileType },
-                                    { value: "email", label: t.emailType },
-                                    { value: "phone", label: t.phoneType },
-                                  ].map((o) => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                  ))}
-                                </TextField>
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      size="small"
-                                      checked={!!depField.required}
-                                      onChange={(e) =>
-                                        setFormData((prev) => {
-                                          const fields = [...(prev.globalDependentFields || [])];
-                                          fields[depIdx] = { ...fields[depIdx], required: e.target.checked };
-                                          return { ...prev, globalDependentFields: fields };
-                                        })
-                                      }
-                                    />
-                                  }
-                                  label={<Typography variant="caption">{t.depRequired}</Typography>} sx={{ ml: 0 }}
-                                />
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      size="small"
-                                      checked={depField.visible !== false}
-                                      onChange={(e) =>
-                                        setFormData((prev) => {
-                                          const fields = [...(prev.globalDependentFields || [])];
-                                          fields[depIdx] = { ...fields[depIdx], visible: e.target.checked };
-                                          return { ...prev, globalDependentFields: fields };
-                                        })
-                                      }
-                                    />
-                                  }
-                                  label={<Typography variant="caption">{t.depVisible}</Typography>} sx={{ ml: 0 }}
-                                />
-                                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", ml: "auto" }}>
-                                  <Tooltip title={t.moveUp}>
-                                    <span>
-                                      <IconButton
-                                        size="small"
-                                        disabled={depIdx === 0}
-                                        onClick={() =>
-                                          setFormData((prev) => {
-                                            const fields = [...(prev.globalDependentFields || [])];
-                                            [fields[depIdx - 1], fields[depIdx]] = [fields[depIdx], fields[depIdx - 1]];
-                                            return { ...prev, globalDependentFields: fields };
-                                          })
-                                        }
-                                      >
-                                        <ICONS.up fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title={t.moveDown}>
-                                    <span>
-                                      <IconButton
-                                        size="small"
-                                        disabled={depIdx === (formData.globalDependentFields || []).length - 1}
-                                        onClick={() =>
-                                          setFormData((prev) => {
-                                            const fields = [...(prev.globalDependentFields || [])];
-                                            [fields[depIdx], fields[depIdx + 1]] = [fields[depIdx + 1], fields[depIdx]];
-                                            return { ...prev, globalDependentFields: fields };
-                                          })
-                                        }
-                                      >
-                                        <ICONS.down fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title={t.removeField}>
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() =>
-                                        setFormData((prev) => {
-                                          const fields = [...(prev.globalDependentFields || [])];
-                                          const removedField = fields[depIdx];
-                                          // A saved field is referenced by mappings via its
-                                          // _id; a brand-new, not-yet-saved field is still
-                                          // referenced by its in-session inputName.
-                                          const removedIdentifier = removedField?._id
-                                            ? String(removedField._id)
-                                            : removedField?.inputName;
-                                          fields.splice(depIdx, 1);
-
-                                          // Prune the removed field from all ticket mappings
-                                          const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                          if (removedIdentifier) {
-                                            Object.keys(mappings).forEach((ticketKey) => {
-                                              mappings[ticketKey] = mappings[ticketKey].filter(
-                                                (f) => String(f) !== String(removedIdentifier)
-                                              );
-                                            });
-                                          }
-
-                                          return { ...prev, globalDependentFields: fields, globalDependentFieldMappings: mappings };
-                                        })
-                                      }
-                                    >
-                                      <ICONS.delete fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              </Box>
-                            ))}
-
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  globalDependentFields: [
-                                    ...(prev.globalDependentFields || []),
-                                    { inputName: "", inputType: "text", required: false, visible: true },
-                                  ],
-                                }))
-                              }
-                              sx={{ mb: 2 }}
-                            >
-                              {t.depAddField}
-                            </Button>
-
-                            {/* Dropdowns — one per ticket name */}
-                            {formData.ticketTypes.some(t => t.name?.trim()) && (
-                              <>
-                                <Typography
-                                  variant="caption"
-                                  sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 0.5 }}
-                                >
-                                  {t.depDependentFields}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  sx={{ display: "block", mb: 1.5 }}
-                                >
-                                  {t.depHint}
-                                </Typography>
-
-                                {formData.ticketTypes
-                                  .filter(t => t.name?.trim())
-                                  .map((ticketType, ticketIdx) => {
-                                    // A saved field is identified by its stable _id (immune
-                                    // to later label edits); a brand-new, not-yet-saved
-                                    // field falls back to its in-session inputName until
-                                    // it's persisted and gets a real _id.
-                                    const availableFields = (formData.globalDependentFields || [])
-                                      .filter(f => f.inputName?.trim())
-                                      .map(f => ({ id: f._id ? String(f._id) : f.inputName, label: f.inputName }));
-
-                                    // Likewise, an existing ticket is keyed by its stable
-                                    // _id; a brand-new ticket is keyed by its current name
-                                    // until saved (see the rename handler above).
-                                    const ticketKey = ticketType._id ? String(ticketType._id) : ticketType.name;
-                                    const selectedIds = (formData.globalDependentFieldMappings || {})[ticketKey] || [];
-                                    const selectedOptions = availableFields.filter((f) => selectedIds.includes(f.id));
-
-                                    return (
-                                      <Box key={ticketIdx} sx={{ mb: 1 }}>
-                                        <Autocomplete
-                                          multiple
-                                          size="small"
-                                          options={availableFields}
-                                          getOptionLabel={(opt) => opt.label}
-                                          isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                                          value={selectedOptions}
-                                          onChange={(e, newVal) =>
-                                            setFormData((prev) => {
-                                              const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                              mappings[ticketKey] = newVal.map((opt) => opt.id);
-                                              return { ...prev, globalDependentFieldMappings: mappings };
-                                            })
-                                          }
-                                          renderInput={(params) => (
-                                            <TextField
-                                              {...params}
-                                              label={`${ticketType.name} → ${t.depSelectFieldsFor}`}
-                                              placeholder={t.dependentsSelect}
-                                            />
-                                          )}
-                                          noOptionsText={t.depNoFieldsYet} fullWidth
-                                        />
-                                      </Box>
-                                    );
-                                  })}
-                              </>
-                            )}
-                          </Box>
-                        )}
-                      </Box>
-
-
-                      <FeesVatEditor
-                        fees={formData.fees}
-                        vatPercentage={formData.vatPercentage}
-                        onChange={(updates) =>
-                          setFormData((prev) => ({ ...prev, ...updates }))
-                        }
-                        t={t}
-                      />
-
-                    </Box>
-                  )}
                 </>
               )}
 
@@ -2627,85 +2383,29 @@ const EventModal = ({
               </Box>
 
               {/* Custom Email Template */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.useCustomEmailTemplate}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          useCustomEmailTemplate: e.target.checked,
-                        }));
-                        if (!e.target.checked) {
-                          setEmailTemplateSubjectError(false);
-                          setEmailTemplateBodyError(false);
-                        }
-                      }}
-                      color="primary"
-                    />
+              <TabOptionCheckbox
+                checked={formData.useCustomEmailTemplate}
+                onChange={(checked) => {
+                  setFormData((prev) => ({ ...prev, useCustomEmailTemplate: checked }));
+                  if (!checked) {
+                    setEmailTemplateSubjectError(false);
+                    setEmailTemplateBodyError(false);
                   }
-                  label={t.useCustomEmailTemplate}
-                  sx={{ alignSelf: "start" }}
+                }}
+                label={t.useCustomEmailTemplate}
+                hint={t.customEmailTemplateHint}
+              />
+
+              {/* Custom WhatsApp Messages */}
+              {canConfigureWhatsApp && (
+                <TabOptionCheckbox
+                  checked={formData.useCustomWhatsAppMessages}
+                  onChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, useCustomWhatsAppMessages: checked }))
+                  }
+                  label={t.useCustomWhatsAppMessages}
+                  hint={t.customWhatsAppMessagesHint}
                 />
-              </Box>
-
-              {formData.useCustomEmailTemplate && (
-                <>
-                  <TextField
-                    fullWidth
-                    label={t.emailSubject}
-                    value={formData.emailTemplateSubject}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        emailTemplateSubject: e.target.value,
-                      }));
-                      if (emailTemplateSubjectError) {
-                        setEmailTemplateSubjectError(false);
-                      }
-                    }}
-                    placeholder={t.placeholderSubject}
-                    required
-                    error={emailTemplateSubjectError}
-                    helperText={emailTemplateSubjectError ? t.emailSubjectRequired : ""}
-                  />
-
-                  <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                      {t.emailBody} {emailTemplateBodyError && (
-                        <Typography component="span" sx={{ color: "error.main" }}>*</Typography>
-                      )}                    </Typography>
-                    <Box
-                      sx={{
-                        border: (theme) =>
-                          emailTemplateBodyError
-                            ? `1px solid ${theme.palette.error.main}`
-                            : "1px solid transparent",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <RichTextEditor
-                        value={formData.emailTemplateBody}
-                        onChange={(html) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            emailTemplateBody: html,
-                          }));
-                          if (emailTemplateBodyError) {
-                            setEmailTemplateBodyError(false);
-                          }
-                        }}
-                        placeholder={t.placeholderBody}
-                        dir={dir}
-                      />
-                    </Box>
-                    {emailTemplateBodyError && (
-                      <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block" }}>                        {t.emailBodyRequired}
-                      </Typography>
-                    )}
-                  </Box>
-                </>
               )}
 
               {/* Use Custom Fields Checkbox */}
@@ -2728,6 +2428,12 @@ const EventModal = ({
                     sx={{ alignSelf: "start" }}
                   />
                 </Box>
+              )}
+
+              {(isClosed || formData.eventType === "public") && formData.useCustomFields && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+                  {t.customFieldsHint}
+                </Typography>
               )}
 
               {initialValues && (
@@ -2756,8 +2462,298 @@ const EventModal = ({
             </Box>
           )}
 
+          {/* Tab: Tickets & Fees (checkout / paid events only) */}
+          {hasTicketsTab && activeTab === ticketsTabIdx && (
+            <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2 }}>
+                <TicketTypesEditor
+                  ticketTypes={formData.ticketTypes}
+                  globalDependentFieldMappings={formData.globalDependentFieldMappings}
+                  onChange={(updates) =>
+                    setFormData((prev) => ({ ...prev, ...updates }))
+                  }
+                  t={t}
+                  required={forcePaid}
+                />
+
+                {/* --Ticket dependent field --*/}
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={!!formData.dependentFieldsEnabled}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            dependentFieldsEnabled: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {t.addDependentFields}
+                      </Typography>
+                    }
+                  />
+
+                  {formData.dependentFieldsEnabled && (
+                    <Box
+                      sx={{
+                        mt: 1,
+                        p: 2,
+                        bgcolor: "background.default",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                      }}
+                    >
+                      {/* Sub-fields list */}
+                      {(formData.globalDependentFields || []).map((depField, depIdx) => (
+                        <Box
+                          key={depIdx}
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 1,
+                            alignItems: "center",
+                            mb: 1.5,
+                            p: 1.5,
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 1.5,
+                            bgcolor: "background.paper",
+                          }}
+                        >
+                          <TextField
+                            size="small"
+                            placeholder={t.depFieldLabel}
+                            value={depField.inputName || ""}
+                            onChange={(e) =>
+                              setFormData((prev) => {
+                                const fields = [...(prev.globalDependentFields || [])];
+                                fields[depIdx] = { ...fields[depIdx], inputName: e.target.value };
+                                return { ...prev, globalDependentFields: fields };
+                              })
+                            }
+                            sx={{ flex: "1 1 140px" }}
+                          />
+                          <TextField
+                            select
+                            size="small"
+                            label={t.depInputType}
+                            value={depField.inputType || "text"}
+                            onChange={(e) =>
+                              setFormData((prev) => {
+                                const fields = [...(prev.globalDependentFields || [])];
+                                fields[depIdx] = { ...fields[depIdx], inputType: e.target.value };
+                                return { ...prev, globalDependentFields: fields };
+                              })
+                            }
+                            sx={{ flex: "1 1 110px" }}
+                            slotProps={{ select: { native: true } }}
+                          >
+                            {[
+                              { value: "text", label: t.textType },
+                              { value: "number", label: t.numberType },
+                              { value: "file", label: t.fileType },
+                              { value: "email", label: t.emailType },
+                              { value: "phone", label: t.phoneType },
+                            ].map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </TextField>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={!!depField.required}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const fields = [...(prev.globalDependentFields || [])];
+                                    fields[depIdx] = { ...fields[depIdx], required: e.target.checked };
+                                    return { ...prev, globalDependentFields: fields };
+                                  })
+                                }
+                              />
+                            }
+                            label={<Typography variant="caption">{t.depRequired}</Typography>} sx={{ ml: 0 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={depField.visible !== false}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const fields = [...(prev.globalDependentFields || [])];
+                                    fields[depIdx] = { ...fields[depIdx], visible: e.target.checked };
+                                    return { ...prev, globalDependentFields: fields };
+                                  })
+                                }
+                              />
+                            }
+                            label={<Typography variant="caption">{t.depVisible}</Typography>} sx={{ ml: 0 }}
+                          />
+                          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", ml: "auto" }}>
+                            <Tooltip title={t.moveUp}>
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled={depIdx === 0}
+                                  onClick={() =>
+                                    setFormData((prev) => {
+                                      const fields = [...(prev.globalDependentFields || [])];
+                                      [fields[depIdx - 1], fields[depIdx]] = [fields[depIdx], fields[depIdx - 1]];
+                                      return { ...prev, globalDependentFields: fields };
+                                    })
+                                  }
+                                >
+                                  <ICONS.up fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title={t.moveDown}>
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  disabled={depIdx === (formData.globalDependentFields || []).length - 1}
+                                  onClick={() =>
+                                    setFormData((prev) => {
+                                      const fields = [...(prev.globalDependentFields || [])];
+                                      [fields[depIdx], fields[depIdx + 1]] = [fields[depIdx + 1], fields[depIdx]];
+                                      return { ...prev, globalDependentFields: fields };
+                                    })
+                                  }
+                                >
+                                  <ICONS.down fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title={t.removeField}>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  setFormData((prev) => {
+                                    const fields = [...(prev.globalDependentFields || [])];
+                                    const removedField = fields[depIdx];
+                                    const removedIdentifier = removedField?._id
+                                      ? String(removedField._id)
+                                      : removedField?.inputName;
+                                    fields.splice(depIdx, 1);
+                                    const mappings = { ...(prev.globalDependentFieldMappings || {}) };
+                                    if (removedIdentifier) {
+                                      Object.keys(mappings).forEach((ticketKey) => {
+                                        mappings[ticketKey] = mappings[ticketKey].filter(
+                                          (f) => String(f) !== String(removedIdentifier)
+                                        );
+                                      });
+                                    }
+                                    return { ...prev, globalDependentFields: fields, globalDependentFieldMappings: mappings };
+                                  })
+                                }
+                              >
+                                <ICONS.delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </Box>
+                      ))}
+
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            globalDependentFields: [
+                              ...(prev.globalDependentFields || []),
+                              { inputName: "", inputType: "text", required: false, visible: true },
+                            ],
+                          }))
+                        }
+                        sx={{ mb: 2 }}
+                      >
+                        {t.depAddField}
+                      </Button>
+
+                      {/* Dropdowns — one per ticket name */}
+                      {formData.ticketTypes.some(t => t.name?.trim()) && (
+                        <>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 0.5 }}
+                          >
+                            {t.depDependentFields}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: "block", mb: 1.5 }}
+                          >
+                            {t.depHint}
+                          </Typography>
+
+                          {formData.ticketTypes
+                            .filter(t => t.name?.trim())
+                            .map((ticketType, ticketIdx) => {
+                              const availableFields = (formData.globalDependentFields || [])
+                                .filter(f => f.inputName?.trim())
+                                .map(f => ({ id: f._id ? String(f._id) : f.inputName, label: f.inputName }));
+                              const ticketKey = ticketType._id ? String(ticketType._id) : ticketType.name;
+                              const selectedIds = (formData.globalDependentFieldMappings || {})[ticketKey] || [];
+                              const selectedOptions = availableFields.filter((f) => selectedIds.includes(f.id));
+                              return (
+                                <Box key={ticketIdx} sx={{ mb: 1 }}>
+                                  <Autocomplete
+                                    multiple
+                                    size="small"
+                                    options={availableFields}
+                                    getOptionLabel={(opt) => opt.label}
+                                    isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                                    value={selectedOptions}
+                                    onChange={(e, newVal) =>
+                                      setFormData((prev) => {
+                                        const mappings = { ...(prev.globalDependentFieldMappings || {}) };
+                                        mappings[ticketKey] = newVal.map((opt) => opt.id);
+                                        return { ...prev, globalDependentFieldMappings: mappings };
+                                      })
+                                    }
+                                    renderInput={(params) => (
+                                      <TextField
+                                        {...params}
+                                        label={`${ticketType.name} → ${t.depSelectFieldsFor}`}
+                                        placeholder={t.dependentsSelect}
+                                      />
+                                    )}
+                                    noOptionsText={t.depNoFieldsYet} fullWidth
+                                  />
+                                </Box>
+                              );
+                            })}
+                        </>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+
+                <FeesVatEditor
+                  fees={formData.fees}
+                  vatPercentage={formData.vatPercentage}
+                  onChange={(updates) =>
+                    setFormData((prev) => ({ ...prev, ...updates }))
+                  }
+                  t={t}
+                />
+              </Box>
+            </Box>
+          )}
+
           {/* Tab: Custom QR Code (visible when useCustomQrCode, last tab) */}
-          {formData.useCustomQrCode && activeTab === (formData.useCustomFields ? 6 : 5) && (
+          {formData.useCustomQrCode && activeTab === customQrTabIdx && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography
                 variant="body2"
@@ -2899,7 +2895,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Uploads */}
-          {activeTab === 3 && (
+          {activeTab === uploadsTabIdx && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Logo Upload */}
               <Box
@@ -3421,7 +3417,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Custom Fields (conditional) */}
-          {activeTab === 4 && formData.useCustomFields && (
+          {activeTab === customFieldsTabIdx && formData.useCustomFields && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(isClosed || formData.eventType === "public") && (
                 <>
@@ -3665,8 +3661,33 @@ const EventModal = ({
             </Box>
           )}
 
+          {/* Tab: Custom Email Template (after the input fields, only when enabled) */}
+          {isEmailTabOpen && (
+            <EmailTemplateWorkspace
+              formData={formData}
+              setFormData={setFormData}
+              isPaid={forcePaid || formData.isPaid}
+              isCheckIn={isClosed}
+              businessSlug={selectedBusiness}
+              eventInfo={eventInfoFromEventForm(formData, isClosed)}
+              errors={{ subject: emailTemplateSubjectError, body: emailTemplateBodyError }}
+              onClearError={(field) =>
+                field === "subject" ? setEmailTemplateSubjectError(false) : setEmailTemplateBodyError(false)
+              }
+            />
+          )}
+
           {/* Tab: Customize Badge (always visible) */}
-          {activeTab === (formData.useCustomFields ? 5 : 4) && (
+          {showWhatsAppTab && activeTab === tabs.whatsapp && (
+            <WhatsAppMessagesTab
+              messages={formData.whatsappMessages}
+              onChange={(whatsappMessages) => setFormData((prev) => ({ ...prev, whatsappMessages }))}
+              catalog={whatsappCatalog}
+              fieldNames={whatsappFieldNames}
+            />
+          )}
+
+          {activeTab === badgeTabIdx && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(() => { if (typeof window !== 'undefined') console.log('[EventModal BadgeTab] bc keys:', Object.keys(formData.badgeCustomizations || {}), 'useCustomFields:', formData.useCustomFields, 'initialValues.customizations:', JSON.stringify(initialValues?.customizations)); return null; })()}
               {formData.useCustomFields && (
@@ -3793,10 +3814,7 @@ const EventModal = ({
               )}
 
               {(() => {
-                const maxTab = formData.useCustomFields
-                  ? (formData.useCustomQrCode ? 6 : 5)
-                  : (formData.useCustomQrCode ? 5 : 4);
-                return activeTab < maxTab;
+                return activeTab < tabs.last;
               })() ? (
                 <Button
                   variant="contained"
