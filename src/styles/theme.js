@@ -476,7 +476,9 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         badge: isDark
           ? "linear-gradient(135deg, #0b4b57 0%, #4fc3d9 58%, #7be7f5 100%)"
           : "linear-gradient(135deg, #005b8c 0%, #0077b6 58%, #40c0d5 100%)",
-        wheelEmpty: "conic-gradient(#666 0deg 360deg)",
+        wheelEmpty: isDark
+          ? "conic-gradient(#8a949c 0deg 360deg)"
+          : "conic-gradient(#666 0deg 360deg)",
         winnerDialog: isDark
           ? "linear-gradient(135deg,#667eea 0%,#764ba2 100%)"
           : "linear-gradient(135deg,#667eea 0%,#764ba2 100%)",
@@ -611,7 +613,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         answerWrongBg: "rgba(244,67,54,0.35)",
         answerWrongBorder: "#e57373",
         resultCard: isDark
-          ? "rgba(255,255,255,0.67)"
+          ? "rgba(15,23,42,0.55)"
           : "rgba(255,255,255,0.92)",
         answerDefaultBg: isDark
           ? "rgba(0,0,0,0.04)"
@@ -708,14 +710,20 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         playerSlotBorderFilled: "#4caf50",
         playerSlotBorderEmpty: "#ffffff44",
 
-        previousSessionGradient: "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-        previousSessionShadow: "0px 6px 20px rgba(0,0,0,0.1)",
+        previousSessionGradient: isDark
+          ? "linear-gradient(to bottom, #1a2630, #0f172a)"
+          : "linear-gradient(to bottom, #f7f7f7, #ffffff)",
+        previousSessionShadow: isDark
+          ? "0px 6px 20px rgba(0,0,0,0.5)"
+          : "0px 6px 20px rgba(0,0,0,0.1)",
         winnerBannerGradient: "linear-gradient(to right, #4CAF50, #81C784)",
         tieBannerGradient: "linear-gradient(to right, #9E9E9E, #BDBDBD)",
-        winnerCellGradient: "linear-gradient(135deg, #A5D6A7, #C8E6C9)",
-        loserCellBg: "#f5f5f5",
-        vsBadgeBg: "#fff",
-        vsBadgeBorder: "2px solid #ccc",
+        winnerCellGradient: isDark
+          ? "linear-gradient(135deg, #1b5e20, #2e7d32)"
+          : "linear-gradient(135deg, #A5D6A7, #C8E6C9)",
+        loserCellBg: isDark ? "rgba(255,255,255,0.05)" : "#f5f5f5",
+        vsBadgeBg: isDark ? "#ffffff22" : "#fff",
+        vsBadgeBorder: `2px solid ${isDark ? "#ffffff55" : "#ccc"}`,
 
         resultCardO: { color: "#c0392b", bg: "rgba(255,107,107,0.1)", symbolColor: "#ff6b6b" },
         resultCardX: { color: "#0096c7", bg: "rgba(0,180,216,0.1)", symbolColor: "#00e5ff" },
@@ -724,10 +732,13 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         pvpResultMapX: { symbolColor: "#00e5ff", bg: "linear-gradient(to right, #00b4d8, #0077b6)" },
         pvpResultMapO: { symbolColor: "#ff6b6b", bg: "linear-gradient(to right, #ff6b6b, #c0392b)" },
         pvpResultMapDraw: { bg: "linear-gradient(to right, #9E9E9E, #BDBDBD)" },
-        pvpWinnerBgO: "rgba(255,107,107,0.08)",
-        pvpWinnerBgX: "rgba(0,180,216,0.08)",
-        pvpVsBadgeBorder: "2px solid #eee",
-        pvpStatsBorderTop: "1px solid #f0f0f0",
+        pvpWinnerBgO: isDark ? "rgba(255,107,107,0.18)" : "rgba(255,107,107,0.08)",
+        pvpWinnerBgX: isDark ? "rgba(0,180,216,0.18)" : "rgba(0,180,216,0.08)",
+        pvpVsBadgeBorder: `2px solid ${isDark ? "#ffffff55" : "#eee"}`,
+        pvpStatsBorderTop: `1px solid ${isDark ? "rgba(255,255,255,0.12)" : "#f0f0f0"}`,
+        pvpSessionCardShadow: isDark
+          ? "0px 6px 20px rgba(0,0,0,0.5)"
+          : "0px 6px 20px rgba(0,0,0,0.1)",
 
         sessionTextPrimary: "rgba(255,255,255,0.65)",
         sessionTextSecondary: "rgba(255,255,255,0.55)",
@@ -736,18 +747,24 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         pendingTextShadow: "0 0 10px rgba(255,255,255,0.3)",
         pendingSecondaryText: "#e0f2f1",
 
-        gameCardBorder: "1px solid #eee",
+        gameCardBorder: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #eee",
 
         // === Host Dashboard: active session card ===
-        activeSessionGradient: "linear-gradient(135deg, #e1f5fe, #ffffff)",
-        activeSessionShadow: "0 12px 35px rgba(0,0,0,0.15)",
-        teamBoxBorder: "2px solid #90caf9",
-        teamBoxBg: "#e3f2fd",
+        activeSessionGradient: isDark
+          ? "linear-gradient(135deg, #0f2233, #16293d)"
+          : "linear-gradient(135deg, #e1f5fe, #ffffff)",
+        activeSessionShadow: isDark
+          ? "0 12px 35px rgba(0,0,0,0.45)"
+          : "0 12px 35px rgba(0,0,0,0.15)",
+        teamBoxBorder: isDark ? "2px solid #1565c0" : "2px solid #90caf9",
+        teamBoxBg: isDark ? "rgba(255,255,255,0.06)" : "#e3f2fd",
 
         // === Team-mode player row card (session lists) ===
-        teamPlayerCardBg: "#ffffff",
-        teamPlayerCardShadow: "0 1px 3px rgba(0,0,0,0.05)",
-        teamCardBg: "#fafafa",
+        teamPlayerCardBg: isDark ? "rgba(255,255,255,0.08)" : "#ffffff",
+        teamPlayerCardShadow: isDark
+          ? "0 1px 3px rgba(0,0,0,0.4)"
+          : "0 1px 3px rgba(0,0,0,0.05)",
+        teamCardBg: isDark ? "rgba(255,255,255,0.05)" : "#fafafa",
 
         // === VS badge (team-mode variant, session lists) ===
         vsBadgeShadow: "0 2px 6px rgba(0,0,0,0.1)",

@@ -757,7 +757,7 @@ export default function PlayPage() {
                   size="large"
                   onClick={handlePlayerActivate}
                   disabled={starting}
-                  startIcon={<ICONS.play />}
+                  startIcon={<ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
                   sx={{
                     px: 4,
                     py: 1.25,

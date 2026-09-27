@@ -10,13 +10,15 @@ import {
   Paper,
   CircularProgress,
   Stack,
-  TextField,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useGame } from "@/contexts/GameContext";
 import { useMessage } from "@/contexts/MessageContext";
 import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWebSocketData";
 import { joinGameSession } from "@/services/crosszero/gameSessionService";
+import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
+import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
+import EventRegPrimaryField from "@/components/games/EventRegPrimaryField";
 import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -65,10 +67,12 @@ export default function CrossZeroPlayerPage() {
   const { game, loading } = useGame();
   const { showMessage } = useMessage();
   const { sessions } = useCrossZeroWebSocketData(gameSlug);
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
+  const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
 
   const [selected, setSelected] = useState("");
-  const [form, setForm] = useState({ name: "" });
+  const [form, setForm] = useState({ name: "", isoCode: "om" });
+  const [primaryValid, setPrimaryValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const theme = useTheme();
@@ -107,12 +111,12 @@ export default function CrossZeroPlayerPage() {
     [sessions]
   );
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (remainingValues) => {
     if (!selected) {
       showMessage(t.selectSide, "error");
       return;
     }
-    if (!form.name.trim() || submitting) return;
+    if (!primaryValid || submitting) return;
     if (!pendingSession?._id) {
       showMessage(t.noSession, "error");
       return;
@@ -121,12 +125,22 @@ export default function CrossZeroPlayerPage() {
     setSubmitting(true);
     setError("");
 
-    const response = await joinGameSession({
+    const payload = {
       gameSlug: game.slug,
       sessionId: pendingSession._id,
       name: form.name.trim(),
       playerType: selected,
-    });
+      isoCode: form.isoCode,
+    };
+
+    const response = remainingValues
+      ? await submitWithRemaining((p) => joinGameSession(p), payload, form.name.trim(), remainingValues)
+      : await submit((p) => joinGameSession(p), payload, form.name.trim());
+
+    if (response?.needsRemainingFields) {
+      setSubmitting(false);
+      return;
+    }
 
     if (!response?.error) {
       const playerInfo = {
@@ -276,7 +290,9 @@ export default function CrossZeroPlayerPage() {
                     borderColor: isSelected ? option.color : "divider",
                     background: isSelected
                       ? (theme) => alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.98 : 0.96)
-                      : (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.28 : 0.55),
+                      : (theme) => theme.palette.mode === "dark"
+                        ? alpha(theme.palette.action.hover, 0.28)
+                        : theme.palette.background.paper,
                     transition: "all 0.25s ease",
                     "&:hover": { transform: "translateY(-3px)" },
                   }}
@@ -321,67 +337,77 @@ export default function CrossZeroPlayerPage() {
           </Stack>
 
           {/* Name fields */}
-          <TextField
-            label={t.nameLabel}
-            fullWidth
-            required
-            sx={{ mb: 2.5, textAlign: "left" }}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            slotProps={{
-              input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
-              inputLabel: { sx: { color: "text.secondary" } }
-            }} />
-          {/* <TextField
-            label={t.companyLabel}
-            fullWidth
-            sx={{ mb: 2.5 }}
-            value={form.company}
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-            slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
-            }}
-          />
-          <TextField
-            label={t.departmentLabel}
-            fullWidth
-            sx={{ mb: 3 }}
-            value={form.department}
-            onChange={(e) => setForm({ ...form, department: e.target.value })}
-            slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
-            }}
-          /> */}
+          {remainingStep ? (
+            <EventRegRemainingFieldsStep
+              fields={remainingStep.fields}
+              submitting={submitting}
+              module="crosszero"
+              onSubmit={(values) => handleSubmit(values)}
+            />
+          ) : (
+            <>
+              <EventRegPrimaryField
+                link={link}
+                module="crosszero"
+                label={link ? link.primaryFieldLabel : t.nameLabel}
+                value={form.name}
+                onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+                onIsoCodeChange={(iso) => setForm((p) => ({ ...p, isoCode: iso }))}
+                onValidityChange={setPrimaryValid}
+                dir={dir}
+                language={language}
+              />
+              {/* <TextField
+                label={t.companyLabel}
+                fullWidth
+                sx={{ mb: 2.5 }}
+                value={form.company}
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+                slotProps={{
+                  input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+                  inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+                }}
+              />
+              <TextField
+                label={t.departmentLabel}
+                fullWidth
+                sx={{ mb: 3 }}
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                slotProps={{
+                  input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+                  inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+                }}
+              /> */}
 
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={handleSubmit}
-            disabled={!selected || !form.name.trim() || submitting}
-            startIcon={
-              submitting ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ICONS.next />
-              )
-            }
-            sx={{
-              ...getStartIconSpacing(dir),
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main",
-              color: "primary.contrastText",
-              "&:hover": { filter: "brightness(1.08)", bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main" },
-              "&:disabled": { opacity: 0.5 },
-            }}
-          >
-            {t.proceed}
-          </Button>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => handleSubmit()}
+                disabled={!selected || !primaryValid || submitting}
+                startIcon={
+                  submitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <ICONS.next />
+                  )
+                }
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  py: 1.2,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main",
+                  color: "primary.contrastText",
+                  "&:hover": { filter: "brightness(1.08)", bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main" },
+                  "&:disabled": { opacity: 0.5 },
+                }}
+              >
+                {t.proceed}
+              </Button>
+            </>
+          )}
 
           {error ? (
             <Typography variant="caption" color="error" sx={{ mt: 1.5, display: "block" }}>

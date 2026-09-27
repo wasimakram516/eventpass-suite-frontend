@@ -9,15 +9,18 @@ const useSpinWheelSocket = ({
   spinWheelId,
   onSyncProgress,
   onUploadProgress,
+  onLoadingProgress,
 } = {}) => {
 
   // ---- callback refs ----
   const syncCbRef = useRef(onSyncProgress);
   const uploadCbRef = useRef(onUploadProgress);
+  const loadingCbRef = useRef(onLoadingProgress);
   useEffect(() => {
     syncCbRef.current = onSyncProgress;
     uploadCbRef.current = onUploadProgress;
-  }, [onSyncProgress, onUploadProgress]);
+    loadingCbRef.current = onLoadingProgress;
+  }, [onSyncProgress, onUploadProgress, onLoadingProgress]);
 
   // ---- progress state ----
   const [syncProgress, setSyncProgress] = useState({
@@ -28,6 +31,12 @@ const useSpinWheelSocket = ({
   const [uploadProgress, setUploadProgress] = useState({
     uploaded: 0,
     total: 0,
+  });
+
+  const [loadingProgress, setLoadingProgress] = useState({
+    loaded: 0,
+    total: 0,
+    data: null,
   });
 
   // ---- socket handlers ----
@@ -59,13 +68,29 @@ const useSpinWheelSocket = ({
     [spinWheelId]
   );
 
+  const handleLoadingEvent = useCallback(
+    (data) => {
+      if (data.spinWheelId !== spinWheelId) return;
+
+      setLoadingProgress({
+        loaded: data.loaded ?? 0,
+        total: data.total ?? 0,
+        data: data.data ?? null,
+      });
+
+      if (loadingCbRef.current) loadingCbRef.current(data);
+    },
+    [spinWheelId]
+  );
+
   // ---- event map (MATCH BACKEND) ----
   const events = useMemo(
     () => ({
       spinWheelSync: handleSyncEvent,
       spinWheelUploadProgress: handleUploadEvent,
+      spinWheelLoadingProgress: handleLoadingEvent,
     }),
-    [handleSyncEvent, handleUploadEvent]
+    [handleSyncEvent, handleUploadEvent, handleLoadingEvent]
   );
 
   const { socket, connected, connectionError } = useSocket(events);
@@ -76,6 +101,7 @@ const useSpinWheelSocket = ({
     connectionError,
     syncProgress,
     uploadProgress,
+    loadingProgress,
   };
 };
 
