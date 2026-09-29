@@ -104,22 +104,19 @@ export default function ModuleCard({
     <AppCard
       variant="module"
       dir={language === "ar" ? "rtl" : "ltr"}
-      onMouseMove={(event) => {
-        const bounds = event.currentTarget.getBoundingClientRect();
-        event.currentTarget.style.setProperty("--module-hover-x", `${event.clientX - bounds.left}px`);
-        event.currentTarget.style.setProperty("--module-hover-y", `${event.clientY - bounds.top}px`);
-      }}
       sx={{
         border: `1px solid ${alpha(moduleColor, 0.14)}`,
         borderInlineStart: `12px solid ${alpha(moduleColor, 0.14)}`,
         boxShadow: `0 1px 2px ${alpha(theme.palette.common.black, 0.04)}, 0 6px 16px ${alpha(moduleColor, 0.06)}`,
+        // Hover wash tied to the top-right corner (fixed, not cursor-tracked),
+        // same treatment uat's CategoryCard/ModuleCard used.
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
           zIndex: 0,
           pointerEvents: "none",
-          background: `radial-gradient(ellipse 100% 100% at var(--module-hover-x, 100%) var(--module-hover-y, 0%), ${alpha(moduleColor, 0.18)} 0%, ${alpha(moduleColor, 0.07)} 40%, transparent 72%)`,
+          background: `radial-gradient(ellipse 100% 100% at 100% 0%, ${alpha(moduleColor, 0.18)} 0%, ${alpha(moduleColor, 0.07)} 40%, transparent 72%)`,
           opacity: 0,
           transition: "opacity 0.25s ease",
         },
