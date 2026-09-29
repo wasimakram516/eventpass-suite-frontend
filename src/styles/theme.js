@@ -2,9 +2,11 @@ import { createTheme } from "@mui/material/styles";
 
 export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
-  // EventPass blue is the single CMS primary in both modes. Dark mode uses a
-  // lighter tint so interactive text and controls remain accessible.
-  const primaryMain = isDark ? "#60A5FA" : "#3D91CF";
+  // EventPass blue is the single CMS primary in both modes, matched to
+  // Facebook's official brand/verified-badge blue (#1877F2). Dark mode uses a
+  // lighter tint of the same hue so interactive text and controls remain
+  // accessible against a dark background.
+  const primaryMain = isDark ? "#5DA0F6" : "#1877F2";
   const secondaryMain = isDark ? "#FFE14D" : "#F5C518";
 
   const successMain = "#2e7d32";
@@ -17,8 +19,8 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       mode,
       primary: {
         main: primaryMain,
-        light: isDark ? "#93C5FD" : "#3B82F6",
-        dark: isDark ? "#2563EB" : "#1E40AF",
+        light: isDark ? "#7DB3F8" : "#3B8BF4",
+        dark: isDark ? "#1877F2" : "#166FE5",
         // dark-mode primary is a light blue tint (for contrast against the
         // dark background), so it needs dark text; light-mode primary stays
         // dark enough for white text.
@@ -26,9 +28,9 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       },
       eventpass: {
         primary: primaryMain,
-        hover: isDark ? "#93C5FD" : "#1E40AF",
-        surface: isDark ? "rgba(96,165,250,0.14)" : "#EFF6FF",
-        surfaceHover: isDark ? "rgba(96,165,250,0.22)" : "#DBEAFE",
+        hover: isDark ? "#7DB3F8" : "#166FE5",
+        surface: isDark ? "rgba(93,160,246,0.14)" : "#EFF6FF",
+        surfaceHover: isDark ? "rgba(93,160,246,0.22)" : "#DBEAFE",
         onPrimary: isDark ? "#0F172A" : "#FFFFFF",
       },
       common: {
