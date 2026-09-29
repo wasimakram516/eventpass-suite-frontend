@@ -8,19 +8,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import { resolveModuleColor } from "@/styles/theme";
 import { ATTENDEE_DATA_CONSUMER_KEYS, getCategoryLabel } from "@/utils/moduleCategories";
 import AppCard from "@/components/cards/AppCard";
-
-// Radius (px) of the semicircular notches cut into the top and bottom edges of
-// the card, centered on the dotted divider (which sits at 65% of the width).
-const NOTCH_R = 9;
-
-// True cutouts, like a boarding pass: a mask of two half-height layers, each
-// with a transparent semicircle centered on the card edge, so the page shows
-// through the notch. (Painting page-colored discs on top instead reads as full
-// circles that hang outside the card.)
-const NOTCH_MASK = [
-  `radial-gradient(circle ${NOTCH_R}px at 65% 0, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) top / 100% 51% no-repeat`,
-  `radial-gradient(circle ${NOTCH_R}px at 65% 100%, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) bottom / 100% 51% no-repeat`,
-].join(", ");
+import { TICKET_NOTCH_MASK, mobileTicketNotchMask, useMobileTicketNotch } from "@/utils/ticketNotch";
 
 // The default banner is a deliberate dark "hero" card in BOTH light and dark
 // mode (per the approved mockup), so its colors are fixed rather than derived
@@ -66,6 +54,11 @@ export default function CoreModuleBanner({
   const router = useRouter();
   const theme = useTheme();
   const resolvedColor = resolveModuleColor(coreModule?.color, theme.palette.mode) || theme.palette.primary.main;
+
+  // Where the mobile dotted divider sits, measured from the card's top edge, so
+  // the notch cutouts can line up with it. Null on desktop, where the divider is
+  // hidden and the top/bottom notches are used instead.
+  const { gridRef, dividerRef, mobileNotchY } = useMobileTicketNotch([variant, language]);
 
   const handleClick = () => {
     if (onClick) onClick();
@@ -228,13 +221,15 @@ export default function CoreModuleBanner({
           background: (theme) =>
             `${BANNER.glow}, ${theme.palette.mode === "dark" ? BANNER.bgDark : BANNER.bgLight}`,
           boxShadow: "none",
-          // md+ only: where the mask is transparent the card is cut away.
-          WebkitMask: { xs: "none", md: NOTCH_MASK },
-          mask: { xs: "none", md: NOTCH_MASK },
+          // Where the mask is transparent the card is cut away: top and bottom
+          // notches from md up, side notches on the horizontal divider below.
+          WebkitMask: { xs: mobileNotchY == null ? "none" : mobileTicketNotchMask(mobileNotchY), md: TICKET_NOTCH_MASK },
+          mask: { xs: mobileNotchY == null ? "none" : mobileTicketNotchMask(mobileNotchY), md: TICKET_NOTCH_MASK },
           "&:hover": { transform: "none", boxShadow: "none" },
         }}
       >
         <Box
+          ref={gridRef}
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "65fr 35fr" },
@@ -345,6 +340,7 @@ export default function CoreModuleBanner({
               Replaces the old solid 1px borderBottom.
             */}
             <Box
+              ref={dividerRef}
               aria-hidden
               sx={{
                 display: { xs: "block", md: "none" },
