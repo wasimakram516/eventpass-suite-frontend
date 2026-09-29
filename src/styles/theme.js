@@ -4,7 +4,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
   // EventPass blue is the single CMS primary in both modes. Dark mode uses a
   // lighter tint so interactive text and controls remain accessible.
-  const primaryMain = isDark ? "#60A5FA" : "#1D4ED8";
+  const primaryMain = isDark ? "#60A5FA" : "#3D91CF";
   const secondaryMain = isDark ? "#FFE14D" : "#F5C518";
 
   const successMain = "#2e7d32";
@@ -821,12 +821,10 @@ export const getTheme = (mode = "light", direction = "ltr") => {
 
       home: {
         heroGradient:
-          "linear-gradient(135deg, #1b3a7a 0%, #3843b2 45%, #6a2ea0 100%)",
-        heroShadow: "0 18px 40px rgba(27,58,122,0.25)",
-        heroOverlayBefore:
-          "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 45%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.14), transparent 40%)",
-        heroOverlayAfter:
-          "radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%)",
+          `radial-gradient(120% 140% at 100% 100%, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 60%), ${isDark ? "linear-gradient(135deg, #0a1a33 0%, #0b2a52 55%, #0d3a72 100%)" : "linear-gradient(135deg, #0a1226 0%, #0b1d40 55%, #0d2a5c 100%)"}`,
+        heroShadow: "0 18px 40px rgba(15, 54, 120, 0.35)",
+        heroOverlayBefore: "transparent",
+        heroOverlayAfter: "transparent",
         heroTextShadow: "0 2px 12px rgba(0,0,0,0.28)",
         heroTextSecondary: "rgba(255,255,255,0.9)",
         heroTextTertiary: "rgba(255,255,255,0.85)",
@@ -1059,6 +1057,21 @@ export const getTheme = (mode = "light", direction = "ltr") => {
           }),
         },
         variants: [
+          {
+            props: { variant: "module" },
+            style: {
+              height: "100%",
+              width: "100%",
+              padding: 0,
+              overflow: "hidden",
+              borderRadius: "14px",
+              position: "relative",
+              isolation: "isolate",
+              containerType: "inline-size",
+              containerName: "module-card",
+              transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
+            },
+          },
           {
             props: { variant: "frosted" },
             style: ({ theme }) => ({

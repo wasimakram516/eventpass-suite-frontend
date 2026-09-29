@@ -14,7 +14,6 @@ import {
   CircularProgress,
   Tooltip,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Accordion,
@@ -767,7 +766,7 @@ export default function HomePage() {
           <>
             {/* Global Overview */}
             {moduleStats.global && (
-              <AppCard sx={{ p: 3, mt: 2, mb: 4, borderRadius: 3 }}>
+              <Box sx={{ mt: 2, mb: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Avatar sx={{ bgcolor: "info.main", mx: 1 }}>
                     <ICONS.business />
@@ -796,13 +795,13 @@ export default function HomePage() {
                     donutEmpty,
                   );
 
-                  const businessesDonut = buildDonutData(
-                    [
-                      {
-                        name: t.businesses,
-                        value: moduleStats.global.totals?.businesses ?? 0,
-                      },
-                    ],
+                  const recentBusinesses = [...businessesInDrawerOrder]
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                  const { data: businessesDonut, total: businessesTotal } = buildDonutData(
+                    recentBusinesses.map((business) => ({
+                      name: business.name || business.slug || t.unknownBusiness,
+                      value: 1,
+                    })),
                     t.noTotals,
                     donutColors,
                     donutEmpty,
@@ -861,10 +860,11 @@ export default function HomePage() {
                             {t.businesses}
                           </Typography>
                           <DashboardStatPreview
-                            data={businessesDonut.data}
-                            total={businessesDonut.total}
+                            data={businessesDonut}
+                            total={businessesTotal}
                             language={language}
                             animateCharts={animateCharts}
+                            legend={businessesDonut}
                           />
                         </AppCard>
                       </Grid>
@@ -896,7 +896,7 @@ export default function HomePage() {
                               alignSelf: "center",
                               textTransform: "none",
                               fontWeight: 700,
-                              borderRadius: 2,
+                              borderRadius: 999,
                             }}
                           >
                             {t.viewDetails}
@@ -906,7 +906,7 @@ export default function HomePage() {
                     </Grid>
                   );
                 })()}
-              </AppCard>
+              </Box>
             )}
 
             {/* Categorized Modules Section */}
@@ -967,7 +967,7 @@ export default function HomePage() {
                           sx={{
                             width: 42,
                             height: 42,
-                            borderRadius: 2,
+                            borderRadius: "50%",
                             bgcolor: alpha(theme.palette.primary.main, 0.08),
                             color: "primary.main",
                             display: "flex",
@@ -1024,7 +1024,7 @@ export default function HomePage() {
                             sx={{
                               width: 42,
                               height: 42,
-                              borderRadius: 2,
+                              borderRadius: "50%",
                               bgcolor: alpha(theme.palette.primary.main, 0.08),
                               color: "primary.main",
                               display: "flex",
@@ -1099,10 +1099,24 @@ export default function HomePage() {
           PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
         >
           <DialogTitle sx={{ px: 3, py: 2.5, color: "common.white", textAlign: align, background: (theme) => theme.palette.home.heroGradient }}>
-            <Typography variant="h6" fontWeight={750}>{t.eventBreakdown}</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.25 }}>
-              {toArabicDigits(`${eventBusinessBreakdown.reduce((sum, business) => sum + Number(business.count || 0), 0)} ${t.eventCount}`, language)}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+              <Box>
+                <Typography variant="h6" fontWeight={750}>{t.eventBreakdown}</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.25 }}>
+                  {toArabicDigits(`${eventBusinessBreakdown.reduce((sum, business) => sum + Number(business.count || 0), 0)} ${t.eventCount}`, language)}
+                </Typography>
+              </Box>
+              <IconButton
+                aria-label={t.close}
+                onClick={() => {
+                  setShowEventDetails(false);
+                  setEventBusinessSearch("");
+                }}
+                sx={{ color: "common.white", mt: -0.5, mr: -1 }}
+              >
+                <ICONS.close />
+              </IconButton>
+            </Box>
           </DialogTitle>
           <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 4, sm: 4.5 }, bgcolor: "action.hover" }}>
             {eventBusinessBreakdown.length > 0 ? (
@@ -1186,7 +1200,7 @@ export default function HomePage() {
                                         }
                                         router.push(`/cms/modules/${moduleByEventType[event.eventType]}/events?search=${encodeURIComponent(event.slug)}`);
                                       }}
-                                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, "&:hover": { borderColor: "primary.main" } }}
+                                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: "50%", "&:hover": { borderColor: "primary.main" } }}
                                     >
                                       <OpenInNewIcon fontSize="small" />
                                     </IconButton>
@@ -1224,12 +1238,6 @@ export default function HomePage() {
               <Typography color="text.secondary">{t.noTotals}</Typography>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {
-              setShowEventDetails(false);
-              setEventBusinessSearch("");
-            }}>{t.close}</Button>
-          </DialogActions>
         </Dialog>
       </Container>
     </Box>

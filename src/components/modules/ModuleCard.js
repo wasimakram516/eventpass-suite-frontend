@@ -32,32 +32,6 @@ const tonalPalette = (color) => [
   lighten(color, 0.25),
 ];
 
-export const moduleCardHoverSx = (color) => ({
-  position: "relative",
-  isolation: "isolate",
-  transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    inset: 0,
-    zIndex: 0,
-    pointerEvents: "none",
-    background: `radial-gradient(ellipse 100% 100% at 100% 0%, ${alpha(color, 0.18)} 0%, ${alpha(color, 0.07)} 40%, transparent 72%)`,
-    opacity: 0,
-    transition: "opacity 0.25s ease",
-  },
-  "& > *": {
-    position: "relative",
-    zIndex: 1,
-  },
-  "&:hover": {
-    borderColor: alpha(color, 0.5),
-    transform: "translateY(-2px)",
-    boxShadow: `0 10px 24px ${alpha(color, 0.12)}`,
-  },
-  "&:hover::before": { opacity: 1 },
-});
-
 const startIconSx = {
   margin: 0,
   marginInlineStart: "-2px",
@@ -82,7 +56,7 @@ export default function ModuleCard({
     resolveModuleColor(module.color, theme.palette.mode) ||
     theme.palette.primary.main;
   const onModuleColor = theme.palette.getContrastText(moduleColor);
-  const label = module.labels?.[language] || module.labels?.en || module.key;
+  const label = module.labels?.en || module.key;
   const description =
     module.descriptions?.[language] || module.descriptions?.en || "";
   const hasPrimaryAction = Boolean(primaryAction?.href || primaryAction?.onClick);
@@ -128,19 +102,34 @@ export default function ModuleCard({
 
   return (
     <AppCard
+      variant="module"
+      dir={language === "ar" ? "rtl" : "ltr"}
+      onMouseMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        event.currentTarget.style.setProperty("--module-hover-x", `${event.clientX - bounds.left}px`);
+        event.currentTarget.style.setProperty("--module-hover-y", `${event.clientY - bounds.top}px`);
+      }}
       sx={{
-        height: "100%",
-        width: "100%",
-        p: 0,
-        overflow: "hidden",
-        borderRadius: "14px",
-        bgcolor: "background.paper",
         border: `1px solid ${alpha(moduleColor, 0.14)}`,
         borderInlineStart: `12px solid ${alpha(moduleColor, 0.14)}`,
         boxShadow: `0 1px 2px ${alpha(theme.palette.common.black, 0.04)}, 0 6px 16px ${alpha(moduleColor, 0.06)}`,
-        containerType: "inline-size",
-        containerName: "module-card",
-        ...moduleCardHoverSx(moduleColor),
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background: `radial-gradient(ellipse 100% 100% at var(--module-hover-x, 100%) var(--module-hover-y, 0%), ${alpha(moduleColor, 0.18)} 0%, ${alpha(moduleColor, 0.07)} 40%, transparent 72%)`,
+          opacity: 0,
+          transition: "opacity 0.25s ease",
+        },
+        "& > *": { position: "relative", zIndex: 1 },
+        "&:hover": {
+          borderColor: alpha(moduleColor, 0.5),
+          transform: "translateY(-2px)",
+          boxShadow: `0 10px 24px ${alpha(moduleColor, 0.12)}`,
+        },
+        "&:hover::before": { opacity: 1 },
       }}
     >
       <Box
@@ -154,6 +143,7 @@ export default function ModuleCard({
         <Box
           sx={{
             display: "grid",
+            direction: language === "ar" ? "rtl" : "ltr",
             gridTemplateColumns: "minmax(0, 1fr)",
             gap: 2.5,
             alignItems: "flex-start",
@@ -165,12 +155,12 @@ export default function ModuleCard({
             }),
           }}
         >
-          <Stack direction="row" spacing={2.5} sx={{ alignItems: "flex-start", minWidth: 0, pt: 4 }}>
+          <Stack direction="row" spacing={2.5} sx={{ alignItems: "flex-start", minWidth: 0, pt: 4, columnGap: 2.5 }}>
             <Box
               sx={{
                 width: 64,
                 height: 64,
-                borderRadius: "14px",
+                borderRadius: "50%",
                 bgcolor: moduleColor,
                 color: onModuleColor,
                 display: "flex",
@@ -187,6 +177,7 @@ export default function ModuleCard({
               <Box
                 sx={{
                   display: "flex",
+                  flexDirection: "row",
                   alignItems: "flex-start",
                   justifyContent: "space-between",
                   flexWrap: "wrap",
@@ -227,7 +218,7 @@ export default function ModuleCard({
               </Box>
 
               {description && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6, maxWidth: 480 }}>
+                <Typography dir={language === "ar" ? "rtl" : "ltr"} variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6, maxWidth: 480, textAlign: language === "ar" ? "right" : "left" }}>
                   {description}
                 </Typography>
               )}
@@ -268,7 +259,7 @@ export default function ModuleCard({
                   }}
                 />
 
-                <Stack spacing={0.5} sx={{ minWidth: 0 }} onMouseLeave={() => setHighlighted(null)}>
+                <Stack spacing={0.5} sx={{ minWidth: 0, textAlign: language === "ar" ? "right" : "left" }} onMouseLeave={() => setHighlighted(null)}>
                   {legend.length === 0 ? (
                     <Typography variant="caption" color="text.secondary">
                       {noTotalsLabel}
@@ -370,7 +361,7 @@ export default function ModuleCard({
                     mt: 1.25,
                     px: 1.5,
                     py: 0.75,
-                    borderRadius: "10px",
+                    borderRadius: 999,
                     border: `1px dashed ${alpha(errorColor, 0.4)}`,
                     bgcolor: alpha(errorColor, 0.04),
                     display: "flex",
@@ -431,7 +422,7 @@ export default function ModuleCard({
                     flexShrink: 0,
                     px: 2.25,
                     py: 1.1,
-                    borderRadius: "10px",
+                    borderRadius: 999,
                     bgcolor: moduleColor,
                     color: onModuleColor,
                     "&:hover": { bgcolor: darken(moduleColor, 0.12) },
@@ -455,7 +446,7 @@ export default function ModuleCard({
                     flexShrink: 0,
                     px: 2.25,
                     py: 1.1,
-                    borderRadius: "10px",
+                    borderRadius: 999,
                     color: "text.primary",
                     borderColor: moduleColor,
                     bgcolor: "background.paper",

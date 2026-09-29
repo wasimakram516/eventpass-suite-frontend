@@ -15,6 +15,11 @@
   import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
   import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
   import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+  import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+  import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+  import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
+  import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+  import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
   import { useRouter } from "next/navigation";
 
   import { useAuth } from "@/contexts/AuthContext";
@@ -23,13 +28,12 @@
   import { useModules, useModuleCategories } from "@/hooks/useModules";
   import { useModuleSearch } from "@/hooks/useModuleSearch";
   import ModuleCard from "@/components/modules/ModuleCard";
-  import { moduleCardHoverSx } from "@/components/modules/ModuleCard";
+  import CoreModuleBanner from "@/components/modules/CoreModuleBanner";
   import { groupByModuleCategory, getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
   import LoadingState from "@/components/LoadingState";
   import { fillTemplate } from "@/utils/stringUtil";
   import { getModuleWorkingRoute } from "@/utils/moduleWorkingRoutes";
   import { useHasPermission } from "@/hooks/usePermission";
-  import { useTheme } from "@mui/material/styles";
 
   const translations = {
     en: {
@@ -84,14 +88,26 @@
     },
   };
 
+  const CATEGORY_ICON_MAP = {
+    EventAvailableOutlined: EventAvailableOutlinedIcon,
+    CampaignOutlined: CampaignOutlinedIcon,
+    SportsEsportsOutlined: SportsEsportsOutlinedIcon,
+    MarkEmailReadOutlined: MarkEmailReadOutlinedIcon,
+    CategoryOutlined: CategoryOutlinedIcon,
+  };
+
+  const getCategoryIconComponent = (categoryId) => {
+    const meta = getCategoryMeta(categoryId);
+    return CATEGORY_ICON_MAP[meta?.iconName] || CategoryOutlinedIcon;
+  };
+
   export default function Modules() {
     const { user } = useAuth();
     const { globalConfig } = useGlobalConfig();
     const { dir, align, language, t } = useI18nLayout(translations);
     const router = useRouter();
-    const theme = useTheme();
 
-    const { modules, loading } = useModules(user, { fetchFullCatalog: true, filterByRole: true });
+    const { modules, moduleLabelsById, loading } = useModules(user, { fetchFullCatalog: true, filterByRole: true });
     const { coreModules, groupedByCategory: nonCoreGroups } = useModuleCategories(modules, groupByModuleCategory);
     const canViewCheckoutPayments = useHasPermission("checkout", "view_payments");
 
@@ -99,22 +115,15 @@
     const [searchQuery, setSearchQuery] = useState("");
 
     const coreModule = coreModules[0];
-    const groupedByCategory = useMemo(() => {
-      const groups = nonCoreGroups.map((group) => ({ ...group, items: [...group.items] }));
-      if (!coreModule) return groups;
-
-      const categoryId = coreModule.category?.id;
-      const groupIndex = groups.findIndex((group) => group.category.id === categoryId);
-      if (groupIndex >= 0) {
-        groups[groupIndex] = {
-          ...groups[groupIndex],
-          items: [coreModule, ...groups[groupIndex].items],
-        };
-      } else if (coreModule.category) {
-        groups.unshift({ category: coreModule.category, items: [coreModule] });
-      }
-      return groups;
-    }, [coreModule, nonCoreGroups]);
+    const groupedByCategory = nonCoreGroups;
+    const moduleRoutesById = useMemo(
+      () => Object.fromEntries(modules.map((module) => [module.key, getModuleWorkingRoute(module)])),
+      [modules],
+    );
+    const categoriesById = useMemo(
+      () => Object.fromEntries(groupedByCategory.map((group) => [group.category.id, group.category])),
+      [groupedByCategory],
+    );
 
     const { searchFilteredGroups, normalizedQuery } = useModuleSearch({
       groupedByCategory,
@@ -222,6 +231,18 @@
           </Stack>
         ) : (
           <Box>
+            {coreModule && (
+              <CoreModuleBanner
+                coreModule={coreModule}
+                moduleLabelsById={moduleLabelsById}
+                moduleRoutesById={moduleRoutesById}
+                categoriesById={categoriesById}
+                onOpenCategory={handleOpenCategory}
+                language={language}
+                t={t}
+                onClick={() => router.push(getModuleWorkingRoute(coreModule))}
+              />
+            )}
             {noSearchMatches ? (
               <Typography color="text.secondary" sx={{ textAlign: align }}>
                 {t.noSearchResults}
@@ -266,26 +287,36 @@
                   </Stack>
 
                   <Stack spacing={5}>
-                    {(selectedCategoryId && activeGroup ? [activeGroup] : searchFilteredGroups).map((group) => (
-                      <Box
-                        key={group.category.id}
-                        sx={{
-                          p: { xs: 2, sm: 3 },
-                          borderRadius: 3,
-                          ...moduleCardHoverSx(
-                            getCategoryMeta(group.category.id)?.color || theme.palette.primary.main,
-                          ),
-                        }}
-                      >
+                    {(selectedCategoryId && activeGroup ? [activeGroup] : searchFilteredGroups).map((group) => {
+                      const CategoryIcon = getCategoryIconComponent(group.category.id);
+                      return (
+                      <Box key={group.category.id} sx={{ p: { xs: 2, sm: 3 } }}>
                         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                          <Box>
+                          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: "50%",
+                                bgcolor: (theme) => `${theme.palette.primary.main}14`,
+                                color: "primary.main",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <CategoryIcon fontSize="small" />
+                            </Box>
+                            <Box>
                             <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
                               {getCategoryLabel(group.category, language)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
                               {getCategoryMeta(group.category.id)?.descriptions?.[language] ?? getCategoryMeta(group.category.id)?.descriptions?.en ?? ""}
                             </Typography>
-                          </Box>
+                            </Box>
+                          </Stack>
                           <Chip size="small" label={group.items.length} color="primary" variant="outlined" />
                         </Stack>
                         <Divider sx={{ mb: 3 }} />
@@ -318,7 +349,8 @@
                           })}
                         </Box>
                       </Box>
-                    ))}
+                      );
+                    })}
                   </Stack>
                 </Box>
               </Box>

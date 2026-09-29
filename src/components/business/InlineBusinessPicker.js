@@ -33,8 +33,8 @@ export default function InlineBusinessPicker({ businesses = [], onSelect }) {
   }, [businesses, query]);
 
   return (
-    <AppCard sx={{ mt: 3, p: { xs: 2, sm: 3 }, maxWidth: 760, mx: "auto" }}>
-      <Stack spacing={2} dir={dir}>
+    <AppCard sx={{ mt: 3, p: { xs: 2, sm: 3 }, maxWidth: 760, mx: "auto", minHeight: "72vh", maxHeight: "78vh" }}>
+      <Stack spacing={2} dir={dir} sx={{ flex: 1, minHeight: 0 }}>
         <Box sx={{ textAlign: align }}>
           <Typography variant="h6" fontWeight={700}>{t.title}</Typography>
           <Typography variant="body2" color="text.secondary">{t.description}</Typography>
@@ -54,7 +54,7 @@ export default function InlineBusinessPicker({ businesses = [], onSelect }) {
           }}
         />
         {visibleBusinesses.length ? (
-          <Stack spacing={0.75} sx={{ maxHeight: 360, overflowY: "auto", pr: 0.5 }}>
+          <Stack spacing={0.75} sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}>
             {visibleBusinesses.map((business) => (
               <Button
                 key={business._id}
