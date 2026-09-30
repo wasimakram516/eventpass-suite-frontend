@@ -31,8 +31,7 @@ import {
   deleteCheckInEvent,
   cloneCheckInEvent,
 } from "@/services/checkin/checkinEventService";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
@@ -315,11 +314,8 @@ export default function EventsPage() {
           <Divider sx={{ mt: 2 }} />
         </Box>
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
@@ -383,6 +379,7 @@ export default function EventsPage() {
             })}
           </Box>
         )}
+        </BusinessScope>
 
         <EventFormModal
           open={openModal}

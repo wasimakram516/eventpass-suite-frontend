@@ -29,8 +29,7 @@ import {
   updateDigipassEvent,
   deleteDigipassEvent,
 } from "@/services/digipass/digipassEventService";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
@@ -265,11 +264,8 @@ export default function EventsPage() {
 
         <Divider sx={{ mb: 3 }} />
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
@@ -313,6 +309,7 @@ export default function EventsPage() {
             })}
           </Box>
         )}
+        </BusinessScope>
 
         <DigiPassEventModal
           open={openModal}

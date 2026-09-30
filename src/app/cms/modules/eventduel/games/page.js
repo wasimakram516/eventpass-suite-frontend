@@ -36,8 +36,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
 import AppCard from "@/components/cards/AppCard";
@@ -304,11 +303,8 @@ export default function GamesPage() {
           <Divider sx={{ mt: 2 }} />
         </Box>
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <LoadingState />
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
@@ -476,6 +472,7 @@ export default function GamesPage() {
             ))}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={shareModalOpen}

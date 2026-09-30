@@ -36,8 +36,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import AuditSearchClearButton from "@/components/AuditSearchClearButton";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
@@ -730,11 +729,8 @@ const Dashboard = () => {
 
         <Divider sx={{ my: 2 }} />
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={businesses} onSelect={handleBusinessSelect} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={businesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box
             sx={{
               display: "flex",
@@ -910,6 +906,7 @@ const Dashboard = () => {
             })}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={openShareModal}

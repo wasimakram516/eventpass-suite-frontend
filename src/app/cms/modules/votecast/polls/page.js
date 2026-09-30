@@ -33,8 +33,7 @@ import {
     clonePoll,
 } from "@/services/votecast/pollService";
 import { getEventsByBusinessSlug } from "@/services/eventreg/eventService";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
@@ -257,11 +256,8 @@ export default function ManagePollsPage() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                {!selectedBusiness ? (
-                    user?.role === "admin" || user?.role === "superadmin" ? (
-                        <InlineBusinessPicker businesses={allBusinesses} onSelect={setSelectedBusiness} />
-                    ) : <EmptyBusinessState />
-                ) : loading ? (
+                <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={setSelectedBusiness}>
+                {loading ? (
                     <Box sx={{ textAlign: "center", mt: 8 }}><CircularProgress /></Box>
                 ) : filteredPolls.length === 0 ? (
                     <NoDataAvailable />
@@ -289,6 +285,7 @@ export default function ManagePollsPage() {
                         ))}
                     </Box>
                 )}
+                </BusinessScope>
 
                 <PollModal
                     open={openModal}

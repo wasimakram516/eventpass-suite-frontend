@@ -36,8 +36,7 @@ import { formatDate } from "@/utils/dateUtils";
 import { getAllBusinesses } from "@/services/businessService";
 import { useAuth } from "@/contexts/AuthContext";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
@@ -316,11 +315,8 @@ export default function WallConfigsPage() {
       {/* Divider */}
       <Divider sx={{ mb: 4 }} />
       {/* Grid of Config Cards */}
-      {!selectedBusiness ? (
-        user?.role === "admin" || user?.role === "superadmin" ? (
-          <InlineBusinessPicker businesses={businesses} onSelect={handleBusinessSelect} />
-        ) : <EmptyBusinessState />
-      ) : isLoading ? (
+      <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={businesses} onSelect={handleBusinessSelect}>
+      {isLoading ? (
         <Box sx={{ textAlign: align, mt: 8 }}>
           <LoadingState />
         </Box>
@@ -477,6 +473,7 @@ export default function WallConfigsPage() {
           ))}
         </Box>
       )}
+      </BusinessScope>
       {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}

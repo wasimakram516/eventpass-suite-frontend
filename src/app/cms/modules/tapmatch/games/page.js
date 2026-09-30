@@ -36,8 +36,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -279,11 +278,8 @@ export default function TapMatchGamesPage() {
           <Divider />
         </Box>
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={allBusinesses} onSelect={handleBusinessSelect} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
@@ -443,6 +439,7 @@ export default function TapMatchGamesPage() {
             ))}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={shareModalOpen}

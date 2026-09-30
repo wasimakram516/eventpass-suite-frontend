@@ -28,8 +28,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -199,11 +198,8 @@ export default function CrossZeroGamesPage() {
           <Divider />
         </Box>
 
-        {!selectedBusiness ? (
-          user?.role === "admin" || user?.role === "superadmin" ? (
-            <InlineBusinessPicker businesses={allBusinesses} onSelect={setSelectedBusiness} />
-          ) : <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={setSelectedBusiness}>
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}><CircularProgress /></Box>
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
@@ -336,6 +332,7 @@ export default function CrossZeroGamesPage() {
             ))}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={shareModalOpen}
