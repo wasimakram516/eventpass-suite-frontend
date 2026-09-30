@@ -73,6 +73,7 @@ import {
   createSurveyNotificationSettings,
   validateSurveyNotificationSettings,
 } from "@/utils/surveyNotificationSettings";
+import { getSurveyBuilderNavigation } from "@/utils/surveyBuilderNavigation";
 
 const translations = {
   en: {
@@ -123,7 +124,9 @@ const translations = {
     max: "Max",
     step: "Step",
     removeQuestion: "Remove question",
-    cancel: "Cancel",
+    close: "Close",
+    back: "Back",
+    next: "Next",
     save: "Save changes",
     saving: "Saving...",
     updating: "Updating...",
@@ -195,7 +198,9 @@ const translations = {
     max: "الحد الأقصى",
     step: "الخطوة",
     removeQuestion: "إزالة السؤال",
-    cancel: "إلغاء",
+    close: "إغلاق",
+    back: "رجوع",
+    next: "التالي",
     save: "حفظ التغييرات",
     saving: "جارٍ الحفظ...",
     updating: "جارٍ التحديث...",
@@ -607,6 +612,10 @@ export default function SurveyFormsManagePage() {
     notificationSettings.useCustomEmailTemplate,
     notificationSettings.useCustomWhatsAppMessages,
   ]);
+  const builderNavigation = useMemo(
+    () => getSurveyBuilderNavigation(builderTabs, builderTab),
+    [builderTab, builderTabs],
+  );
 
   useEffect(() => {
     if (!builderTabs.some((tab) => tab.id === builderTab)) setBuilderTab("options");
@@ -1339,7 +1348,22 @@ export default function SurveyFormsManagePage() {
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>{editing ? t.editForm : t.createForm}</DialogTitle>
+        <DialogTitle sx={{ position: "relative", pr: 7 }}>
+          {editing ? t.editForm : t.createForm}
+          <IconButton
+            aria-label={t.close}
+            onClick={() => setOpen(false)}
+            disabled={saving}
+            sx={{
+              position: "absolute",
+              right: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Tabs
@@ -1810,38 +1834,54 @@ export default function SurveyFormsManagePage() {
             </Box>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            startIcon={<ICONS.cancel fontSize="small" />}
-            sx={getStartIconSpacing(dir)}
-            disabled={saving}
-          >
-            {t.cancel}
-          </Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          {builderNavigation.previousTabId && (
+            <Button
+              variant="outlined"
+              onClick={() => setBuilderTab(builderNavigation.previousTabId)}
+              disabled={saving}
+              startIcon={dir === "rtl" ? <ICONS.next /> : <ICONS.back />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.back}
+            </Button>
+          )}
 
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            startIcon={
-              saving ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <ICONS.save fontSize="small" />
-              )
-            }
-            sx={getStartIconSpacing(dir)}
-            disabled={saving}
-          >
-            {saving
-              ? editing
-                ? t.updating
-                : t.saving
-              : editing
-                ? t.save
-                : t.create}
-          </Button>
+          {builderNavigation.nextTabId ? (
+            <Button
+              variant="contained"
+              onClick={() => setBuilderTab(builderNavigation.nextTabId)}
+              disabled={saving}
+              startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.next}
+            </Button>
+          ) : (
+            builderNavigation.isLastTab && (
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                startIcon={
+                  saving ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : (
+                    <ICONS.save fontSize="small" />
+                  )
+                }
+                sx={getStartIconSpacing(dir)}
+                disabled={saving}
+              >
+                {saving
+                  ? editing
+                    ? t.updating
+                    : t.saving
+                  : editing
+                    ? t.save
+                    : t.create}
+              </Button>
+            )
+          )}
         </DialogActions>
       </Dialog>
       <ShareLinkModal
