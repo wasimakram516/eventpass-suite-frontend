@@ -123,7 +123,7 @@ export default function Navbar() {
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Link href="/" aria-label="EventPass" style={{ textDecoration: "none", display: "flex" }}>
             <Image
-              src={mode === "dark" ? "/logoDark.png" : "/logoLight.png"}
+              src={isPublicRoot || mode === "dark" ? "/logoDark.png" : "/logoLight.png"}
               alt="EventPass"
               width={126}
               height={50}

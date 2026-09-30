@@ -1,6 +1,6 @@
   "use client";
 
-  import { useState, useMemo } from "react";
+  import { useState, useMemo, useEffect, useRef } from "react";
   import {
     Box,
     Container,
@@ -116,6 +116,23 @@
 
     const coreModule = coreModules[0];
     const groupedByCategory = nonCoreGroups;
+
+    // Default the category filter to Event Operations once the categories
+    // load, rather than starting on "All categories". Only applies once, via
+    // the ref guard, so it never overrides a later explicit click back to All
+    // categories.
+    const appliedDefaultCategoryRef = useRef(false);
+    useEffect(() => {
+      if (appliedDefaultCategoryRef.current) return;
+      if (!groupedByCategory.length) return;
+      const eventOps = groupedByCategory.find(
+        (group) => (group.category?.labels?.en || "").trim().toLowerCase() === "event operations",
+      );
+      if (eventOps) {
+        appliedDefaultCategoryRef.current = true;
+        setSelectedCategoryId(eventOps.category.id);
+      }
+    }, [groupedByCategory]);
     const moduleRoutesById = useMemo(
       () => Object.fromEntries(modules.map((module) => [module.key, getModuleWorkingRoute(module)])),
       [modules],
@@ -249,14 +266,9 @@
               </Typography>
             ) : (
               <Box>
+                {/* "All categories" last, so the default-selected category
+                    (Event Operations) reads first. */}
                 <Stack direction="row" sx={{ flexWrap: "wrap", rowGap: { xs: 1, md: 0.75 }, columnGap: 1, mb: 4 }}>
-                  <Chip
-                    label={`${t.allCategories} (${totalModuleCount})`}
-                    clickable
-                    onClick={() => setSelectedCategoryId(null)}
-                    color={!selectedCategoryId ? "primary" : "default"}
-                    variant={!selectedCategoryId ? "filled" : "outlined"}
-                  />
                   {searchFilteredGroups.map((group) => (
                     <Chip
                       key={group.category.id}
@@ -267,6 +279,13 @@
                       variant={group.category.id === selectedCategoryId ? "filled" : "outlined"}
                     />
                   ))}
+                  <Chip
+                    label={`${t.allCategories} (${totalModuleCount})`}
+                    clickable
+                    onClick={() => setSelectedCategoryId(null)}
+                    color={!selectedCategoryId ? "primary" : "default"}
+                    variant={!selectedCategoryId ? "filled" : "outlined"}
+                  />
                 </Stack>
 
                 <Box>

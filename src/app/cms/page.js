@@ -38,7 +38,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useTheme, alpha } from "@mui/material/styles";
 import {
   getDashboardInsights,
@@ -46,6 +46,8 @@ import {
 } from "@/services/dashboardService";
 import LoadingState from "@/components/LoadingState";
 import ICONS from "@/utils/iconUtil";
+import { TICKET_GRID_COLUMNS } from "@/utils/ticketNotch";
+import WelcomeScene from "@/components/dashboard/WelcomeScene";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
@@ -215,23 +217,42 @@ const Clock = React.memo(function Clock({ language, align, color }) {
   );
 });
 
+// Same card language as ModuleCard.js: a 12px start-border accent and a
+// hover glow tied to the top-right corner (fixed, not cursor-tracked), same
+// as uat's CategoryCard/ModuleCard.
 const dashboardStatCardSx = {
   p: 2.5,
   height: "100%",
   width: "100%",
   textAlign: "center",
   overflow: "hidden",
-  borderRadius: "14px",
-  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-  borderInlineStart: (theme) => `6px solid ${alpha(theme.palette.primary.main, 0.16)}`,
-  boxShadow: (theme) => `0 4px 14px ${alpha(theme.palette.common.black, theme.palette.mode === "dark" ? 0.18 : 0.05)}`,
+  position: "relative",
+  // No borderRadius override: inherit AppCard's own default so these corners
+  // match ModuleCard.js's exactly, rather than an approximated "14px".
+  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+  borderInlineStart: (theme) => `12px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+  boxShadow: (theme) => `0 1px 2px ${alpha(theme.palette.common.black, 0.04)}, 0 6px 16px ${alpha(theme.palette.primary.main, 0.06)}`,
   transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
-  "&:hover": {
-    borderColor: (theme) => alpha(theme.palette.primary.main, 0.4),
-    transform: "translateY(-2px)",
-    boxShadow: (theme) => `0 10px 22px ${alpha(theme.palette.primary.main, 0.12)}`,
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: "none",
+    background: (theme) =>
+      `radial-gradient(ellipse 100% 100% at 100% 0%, ${alpha(theme.palette.primary.main, 0.18)} 0%, ${alpha(theme.palette.primary.main, 0.07)} 40%, transparent 72%)`,
+    opacity: 0,
+    transition: "opacity 0.25s ease",
   },
+  "& > *": { position: "relative", zIndex: 1 },
+  "&:hover": {
+    borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+    transform: "translateY(-2px)",
+    boxShadow: (theme) => `0 10px 24px ${alpha(theme.palette.primary.main, 0.12)}`,
+  },
+  "&:hover::before": { opacity: 1 },
 };
+
 
 const DashboardStatPreview = React.memo(function DashboardStatPreview({
   data,
@@ -239,6 +260,7 @@ const DashboardStatPreview = React.memo(function DashboardStatPreview({
   language,
   animateCharts,
   legend = [],
+  action,
 }) {
   const theme = useTheme();
   const primary = theme.palette.primary.main;
@@ -258,6 +280,11 @@ const DashboardStatPreview = React.memo(function DashboardStatPreview({
         alignItems: "center",
         gridTemplateColumns: hasLegend ? "112px minmax(0, 1fr)" : "1fr",
         columnGap: hasLegend ? 1.5 : 0,
+        // Grows to fill whatever height its AppCard sibling has (the Grid
+        // stretches all three stat cards to the tallest one), so all three
+        // inner boxes end up the same height instead of the shortest one
+        // leaving blank space below it.
+        flexGrow: 1,
       }}
     >
       <Box sx={{ display: "grid", placeItems: "center" }}>
@@ -307,6 +334,12 @@ const DashboardStatPreview = React.memo(function DashboardStatPreview({
             </Tooltip>
           )}
         </Stack>
+      )}
+
+      {action && (
+        <Box sx={{ gridColumn: "1 / -1", mt: 0.5, textAlign: "center" }}>
+          {action}
+        </Box>
       )}
     </Box>
   );
@@ -383,6 +416,23 @@ export default function HomePage() {
     modules,
     groupByModuleCategory,
   );
+
+  // Default the category filter to Event Operations once the categories load,
+  // rather than starting on "All categories". Only applies once, via the ref
+  // guard, so it never overrides a later explicit click back to All categories.
+  const appliedDefaultCategoryRef = useRef(false);
+  useEffect(() => {
+    if (appliedDefaultCategoryRef.current) return;
+    if (!groupedByCategory.length) return;
+    const eventOps = groupedByCategory.find(
+      (group) => (group.category?.labels?.en || "").trim().toLowerCase() === "event operations",
+    );
+    if (eventOps) {
+      appliedDefaultCategoryRef.current = true;
+      setSelectedCategoryId(eventOps.category.id);
+    }
+  }, [groupedByCategory]);
+
   const canViewCheckoutPayments = useHasPermission("checkout", "view_payments");
 
   const coreModule = coreModules[0];
@@ -565,6 +615,13 @@ export default function HomePage() {
       : hours < 18
         ? t.greetingAfternoon
         : t.greetingEvening;
+  // Same thresholds as the greeting text above, so the welcome header's
+  // animated sky always matches what the greeting says.
+  // Independent of the greeting text above (which stays Morning/Afternoon/
+  // Evening) — the scene gets a real fourth band for late night hours, since
+  // "Good Night" isn't a real greeting but the night sky is a real look.
+  const welcomeBand =
+    hours < 6 ? "night" : hours < 12 ? "morning" : hours < 17 ? "afternoon" : hours < 20 ? "evening" : "night";
 
   const donutColors = theme.palette.home.donutColors;
   const donutEmpty = theme.palette.home.donutEmpty;
@@ -587,73 +644,84 @@ export default function HomePage() {
         maxWidth={false}
         sx={{ px: { xs: 2, md: 3, lg: 4 } }}
       >
-        {/* Welcome Header */}
+        {/* Welcome Header — same height and prominent-name treatment as the
+            EventReg core module banner (CoreModuleBanner's default variant):
+            a cyan top edge and a small pill badge above the headline, a big
+            bold name. The background is an animated time-of-day sky
+            (WelcomeScene) — everything else about the card is unchanged. */}
         <AppCard
           sx={{
-            p: 4,
+            p: 0,
             mb: 4,
             borderRadius: 3,
             color: "common.white",
             position: "relative",
             overflow: "hidden",
-            background: theme.palette.home.heroGradient,
+            minHeight: { md: 250 },
+            background: "transparent",
             boxShadow: theme.palette.home.heroShadow,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              background: theme.palette.home.heroOverlayBefore,
-              pointerEvents: "none",
-            },
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              right: -120,
-              top: -120,
-              width: 320,
-              height: 320,
-              borderRadius: "50%",
-              background: theme.palette.home.heroOverlayAfter,
-              pointerEvents: "none",
-            },
           }}
         >
+          <WelcomeScene band={welcomeBand} />
+          {/* Cyan top edge, matching the module banner's accent line */}
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: "linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, #38bdf8 50%, rgba(56, 189, 248, 0) 100%)",
+              opacity: 0.85,
+              zIndex: 1,
+            }}
+          />
           <Box
             sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 2,
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: TICKET_GRID_COLUMNS },
+              alignItems: "stretch",
               position: "relative",
               zIndex: 1,
+              minHeight: { md: 250 },
             }}
           >
             {/* Greeting / Info */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", p: { xs: 3, md: 5 }, pb: { xs: 2, md: 5 } }}>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignSelf: "flex-start",
+                  alignItems: "center",
+                  px: 1.25,
+                  py: 0.35,
+                  borderRadius: "999px",
+                  gap: 0.75,
+                  bgcolor: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid rgba(255, 255, 255, 0.16)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  letterSpacing: 0.3,
+                  mb: 1.5,
+                }}
+              >
+                <Box aria-hidden sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#38bdf8" }} />
+                {greeting}
+              </Box>
               <Typography
-                variant="h5"
-                gutterBottom
+                variant="h4"
+                component="h1"
                 sx={{
                   textAlign: align,
                   color: "common.white",
-                  letterSpacing: "0.3px",
                   textShadow: theme.palette.home.heroTextShadow,
-                  fontWeight: 600,
-                  lineHeight: 1.15,
+                  fontWeight: 800,
+                  fontSize: { xs: "2.25rem", md: "3rem" },
+                  lineHeight: 1.1,
                 }}>
-                {greeting},{" "}
-                <Typography
-                  component="span"
-                  variant="h3"
-                  sx={{
-                    display: "inline-block",
-                    fontWeight: 800,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {user?.name || "Guest"}
-                </Typography>
+                {user?.name || "Guest"}
               </Typography>
               <Clock language={language} align={align} color={theme.palette.home.heroTextSecondary} />
               <Typography
@@ -666,15 +734,19 @@ export default function HomePage() {
                 {t.overviewIntro}
               </Typography>
             </Box>
+
             {/* Recompute button + last updated */}
             <Box
               dir={dir}
               sx={{
                 display: "flex",
                 flexDirection: "column",
+                justifyContent: "center",
                 alignItems: { xs: "flex-start", sm: "flex-end" },
                 gap: 0.5,
                 width: { xs: "100%", sm: "auto" },
+                p: { xs: 3, md: 5 },
+                pt: { xs: 2, md: 5 },
               }}
             >
               {connected ? (
@@ -885,22 +957,20 @@ export default function HomePage() {
                             language={language}
                             animateCharts={animateCharts}
                             legend={eventLegend}
+                            action={
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => setShowEventDetails(true)}
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {t.viewDetails}
+                              </Button>
+                            }
                           />
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setShowEventDetails(true)}
-                            sx={{
-                              mt: 1,
-                              width: "50%",
-                              alignSelf: "center",
-                              textTransform: "none",
-                              fontWeight: 700,
-                              borderRadius: 999,
-                            }}
-                          >
-                            {t.viewDetails}
-                          </Button>
                         </AppCard>
                       </Grid>
                     </Grid>
@@ -917,15 +987,9 @@ export default function HomePage() {
                 </Typography>
               </Box>
 
-              {/* Category Filter Chips */}
+              {/* Category Filter Chips — "All categories" last, so the
+                  default-selected category (Event Operations) reads first. */}
               <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 4, gap: 1 }}>
-                <Chip
-                  label={`${t.allCategories} (${totalModuleCount})`}
-                  clickable
-                  onClick={() => setSelectedCategoryId(null)}
-                  color={!selectedCategoryId ? "primary" : "default"}
-                  variant={!selectedCategoryId ? "filled" : "outlined"}
-                />
                 {groupedByCategory.map((group) => {
                   const isCoreInThisCategory =
                     coreModule && coreModule.category?.id === group.category.id;
@@ -946,6 +1010,13 @@ export default function HomePage() {
                     />
                   );
                 })}
+                <Chip
+                  label={`${t.allCategories} (${totalModuleCount})`}
+                  clickable
+                  onClick={() => setSelectedCategoryId(null)}
+                  color={!selectedCategoryId ? "primary" : "default"}
+                  variant={!selectedCategoryId ? "filled" : "outlined"}
+                />
               </Stack>
 
               <Box>
