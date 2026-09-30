@@ -19,6 +19,7 @@ import EventFormModal from "@/components/modals/EventModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import ICONS from "@/utils/iconUtil";
 import { getEventStatus, formatDate } from "@/utils/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -177,11 +178,7 @@ export default function EventsPage() {
       .catch(() => setAllBusinesses([]));
   }, []);
 
-  useEffect(() => {
-    if (user?.role === "business" && user.business?.slug && !selectedBusiness) {
-      setSelectedBusiness(user.business.slug);
-    }
-  }, [user, selectedBusiness, setSelectedBusiness]);
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
 
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);

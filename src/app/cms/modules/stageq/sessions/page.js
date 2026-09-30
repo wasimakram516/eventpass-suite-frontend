@@ -20,6 +20,7 @@ import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import StageQSessionModal from "@/components/modals/StageQSessionModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
@@ -112,11 +113,7 @@ export default function ManageSessionsPage() {
             .catch(() => setAllBusinesses([]));
     }, []);
 
-    useEffect(() => {
-        if (user?.role === "business" && user.business?.slug && !selectedBusiness) {
-            setSelectedBusiness(user.business.slug);
-        }
-    }, [user, selectedBusiness, setSelectedBusiness]);
+    useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
 
     useEffect(() => {
         if (!selectedBusiness) {

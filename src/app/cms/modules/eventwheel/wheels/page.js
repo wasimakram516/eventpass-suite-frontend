@@ -43,6 +43,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import LoadingState from "@/components/LoadingState";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -153,6 +154,7 @@ const Dashboard = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
   const { t, dir, language } = useI18nLayout(translations);
   const canCreate = useHasPermission("eventwheel", "create");
   const canEdit = useHasPermission("eventwheel", "edit");
@@ -279,29 +281,14 @@ const Dashboard = () => {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business" && !selectedBusiness) {
-        const userBusiness = businessList.find(
-          (business) =>
-            business.slug === user.business?.slug ||
-            business._id === user.business?._id
-        );
-        if (userBusiness) {
-          setSelectedBusiness(userBusiness.slug);
-          fetchSpinWheels(userBusiness.slug);
-        }
-      } else if (selectedBusiness) {
+      if (selectedBusiness) {
         fetchSpinWheels(selectedBusiness);
       }
       setLoading(false);
     };
 
     initializeBusinesses();
-  },[user?.id,
-  user?.role,
-  user?.business?.slug,
-  user?.business?._id,
-  selectedBusiness
-]);
+  }, [selectedBusiness]);
 
   const fetchSpinWheels = useCallback(
     async (businessSlug = "") => {

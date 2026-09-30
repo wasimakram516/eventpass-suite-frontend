@@ -41,6 +41,7 @@ import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -144,6 +145,7 @@ export default function WallConfigsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [wallToDelete, setWallToDelete] = useState(null);
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t, dir, align, language } = useI18nLayout(translations);
@@ -168,15 +170,7 @@ export default function WallConfigsPage() {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business" && !selectedBusiness) {
-        const userBusiness = businessList.find(
-          (business) => business.slug === user.business?.slug
-        );
-        if (userBusiness) {
-          setSelectedBusiness(userBusiness.slug);
-          fetchWallConfigs(userBusiness.slug);
-        }
-      } else if (selectedBusiness) {
+      if (selectedBusiness) {
         fetchWallConfigs(selectedBusiness);
       }
 
@@ -184,12 +178,7 @@ export default function WallConfigsPage() {
     };
 
     fetchBusinesses();
-  }, [user?.id,
-  user?.role,
-  user?.business?.slug,
-  user?.business?._id,
-  selectedBusiness
-]);
+  }, [selectedBusiness]);
 
   const fetchWallConfigs = async (businessSlug = "") => {
     setIsLoading(true);

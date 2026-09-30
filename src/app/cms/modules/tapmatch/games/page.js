@@ -30,6 +30,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
@@ -138,10 +139,7 @@ export default function TapMatchGamesPage() {
     fetchBusinesses();
   }, []);
 
-  useEffect(() => {
-    if (user?.role === "business" && user.business?._id && !selectedBusiness)
-      setSelectedBusiness(user.business.slug);
-  }, [user, selectedBusiness, setSelectedBusiness]);
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
 
   useEffect(() => {
     if (!selectedBusiness) {
