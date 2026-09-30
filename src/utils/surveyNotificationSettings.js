@@ -69,7 +69,10 @@ export function buildSurveyNotificationPayload(settings, whatsappCatalog) {
     emailTemplate: buildEmailTemplatePayload(settings),
     useCustomWhatsAppMessages: settings.useCustomWhatsAppMessages,
   };
-  if (whatsappCatalog.templatesById.size > 0 || settings.whatsappMessages.length === 0) {
+  if (
+    settings.useCustomWhatsAppMessages &&
+    (whatsappCatalog.templatesById.size > 0 || settings.whatsappMessages.length === 0)
+  ) {
     payload.whatsappMessages = toMessagesPayload(settings.whatsappMessages, whatsappCatalog.templatesById);
   }
   return payload;
