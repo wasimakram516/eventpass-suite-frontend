@@ -22,7 +22,7 @@ import EmailPreviewPane from "@/components/modals/EmailPreviewPane";
  * @param {React.ReactNode} [props.children] - Extra controls shown under the form (for example an attachment picker)
  * @returns {JSX.Element}
  */
-const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = false, businessSlug, eventInfo, errors, onClearError, children }) => (
+const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = false, isSurvey = false, businessSlug, eventInfo, errors, onClearError, children }) => (
   <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "flex-start", gap: 2 }}>
     <Box sx={{ flex: { md: "7 1 0" }, minWidth: 0, width: "100%" }}>
       <EmailTemplateTab
@@ -30,6 +30,7 @@ const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = fal
         setFormData={setFormData}
         isPaid={isPaid}
         isCheckIn={isCheckIn}
+        isSurvey={isSurvey}
         businessSlug={businessSlug}
         errors={errors}
         onClearError={onClearError}
@@ -46,7 +47,7 @@ const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = fal
         top: { md: 0 },
       }}
     >
-      <EmailPreviewPane formData={formData} isPaid={isPaid} isCheckIn={isCheckIn} eventInfo={eventInfo} />
+      <EmailPreviewPane formData={formData} isPaid={isPaid} isCheckIn={isCheckIn} isSurvey={isSurvey} eventInfo={eventInfo} />
     </Box>
   </Box>
 );

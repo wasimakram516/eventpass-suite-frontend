@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, DialogActions } from "@mui/material";
+import { Button, CircularProgress, DialogActions } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -20,6 +20,7 @@ const translations = {
  * @param {boolean} props.canSendEmail - Whether the user may send email
  * @param {boolean} props.canSendWhatsapp - Whether the user may send WhatsApp
  * @param {boolean} props.disabled - Disable both buttons while a send is running
+ * @param {"email"|"whatsapp"|null} [props.sendingChannel] - Channel currently being sent
  * @param {boolean} [props.whatsappDisabled] - Disable WhatsApp only (no sendable message chosen)
  * @param {() => void} props.onSendEmail - Called when Send Email is clicked
  * @param {() => void} props.onSendWhatsApp - Called when Send WhatsApp is clicked
@@ -30,6 +31,7 @@ const NotificationActions = ({
   canSendEmail,
   canSendWhatsapp,
   disabled,
+  sendingChannel = null,
   whatsappDisabled = false,
   onSendEmail,
   onSendWhatsApp,
@@ -44,7 +46,11 @@ const NotificationActions = ({
         <Button
           variant="contained"
           color="success"
-          startIcon={<ICONS.whatsapp />}
+          startIcon={
+            sendingChannel === "whatsapp"
+              ? <CircularProgress size={18} color="inherit" />
+              : <ICONS.whatsapp />
+          }
           onClick={onSendWhatsApp}
           disabled={disabled || whatsappDisabled}
           sx={getStartIconSpacing(dir)}
@@ -56,7 +62,11 @@ const NotificationActions = ({
         <Button
           variant="contained"
           color="primary"
-          startIcon={<ICONS.email />}
+          startIcon={
+            sendingChannel === "email"
+              ? <CircularProgress size={18} color="inherit" />
+              : <ICONS.email />
+          }
           onClick={onSendEmail}
           disabled={disabled}
           sx={getStartIconSpacing(dir)}

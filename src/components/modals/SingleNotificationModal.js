@@ -10,6 +10,7 @@ import DefaultNotificationInfo from "@/components/modals/DefaultNotificationInfo
 import WhatsAppMessagePicker, { canSendWhatsAppChoice } from "@/components/whatsapp/WhatsAppMessagePicker";
 import useWhatsAppMessageChoice from "@/hooks/useWhatsAppMessageChoice";
 import { sendCheckInSingleNotification } from "@/services/checkin/checkinRegistrationService";
+import { isNotificationSendSuccessful } from "@/utils/notificationEmail";
 
 const translations = {
   en: { notifyTitle: "Notify" },
@@ -38,15 +39,25 @@ const SingleNotificationModal = ({
   event = null,
   canSendEmail = true,
   canSendWhatsapp = true,
+  sendEmailNotification,
+  sendWhatsAppNotification,
+  whatsappResourceId,
+  loadWhatsAppMessages,
+  loadWhatsAppPreview,
+  isSurvey = false,
 }) => {
   const { t, dir } = useI18nLayout(translations);
   const [sending, setSending] = useState(false);
+  const [sendingChannel, setSendingChannel] = useState(null);
   const draft = useNotificationDraft(event, open);
   const { notificationType, composer } = draft;
   const whatsappChoice = useWhatsAppMessageChoice({
     event,
     enabled: open && canSendWhatsapp,
     registrationId: registration?._id,
+    resourceId: whatsappResourceId,
+    loadMessages: loadWhatsAppMessages,
+    loadPreview: loadWhatsAppPreview,
   });
 
   const handleClose = () => {
@@ -68,21 +79,32 @@ const SingleNotificationModal = ({
         : {};
 
     setSending(true);
+    setSendingChannel(channel);
     try {
-      await sendCheckInSingleNotification(
-        registration._id,
-        {
-          channel,
-          type,
-          ...(channel === "whatsapp" ? { messageId: whatsappChoice.messageId } : {}),
-          ...customFields,
-        },
-        isCustom ? draft.attachedFile : undefined
-      );
+      const payload = {
+        channel,
+        type,
+        ...(channel === "whatsapp" ? { messageId: whatsappChoice.messageId } : {}),
+        ...customFields,
+      };
+      let result;
+      if (channel === "email" && sendEmailNotification) {
+        result = await sendEmailNotification(registration._id, payload);
+      } else if (channel === "whatsapp" && sendWhatsAppNotification) {
+        result = await sendWhatsAppNotification(registration._id, payload);
+      } else {
+        result = await sendCheckInSingleNotification(
+          registration._id,
+          payload,
+          isCustom ? draft.attachedFile : undefined,
+        );
+      }
+      if (!isNotificationSendSuccessful(result)) return;
       onSent?.(channel);
       handleClose();
     } finally {
       setSending(false);
+      setSendingChannel(null);
     }
   };
 
@@ -117,6 +139,8 @@ const SingleNotificationModal = ({
               event={event}
               attachedFile={draft.attachedFile}
               onFileChange={draft.setAttachedFile}
+              showAttachment={!isSurvey}
+              isSurvey={isSurvey}
             />
           )}
         </Stack>
@@ -126,6 +150,7 @@ const SingleNotificationModal = ({
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
         disabled={sending}
+        sendingChannel={sendingChannel}
         whatsappDisabled={!canSendWhatsAppChoice(whatsappChoice)}
         onSendEmail={() => handleSend("email")}
         onSendWhatsApp={() => handleSend("whatsapp")}

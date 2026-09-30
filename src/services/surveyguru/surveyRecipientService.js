@@ -24,6 +24,40 @@ export const sendBulkSurveyEmails = withApiHandler(
   { showSuccess: true }
 );
 
+export const getSurveyWhatsAppMessages = withApiHandler(async (formId) => {
+  const { data } = await api.get(`/surveyguru/forms/${formId}/recipients/whatsapp-messages`);
+  return data;
+});
+
+export const previewSurveyWhatsAppMessage = withApiHandler(async (formId, payload = {}) => {
+  const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/whatsapp-preview`, payload);
+  return data;
+});
+
+export const sendBulkSurveyWhatsApp = withApiHandler(
+  async (formId, payload = {}) => {
+    const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/bulk-whatsapp`, payload);
+    return data;
+  },
+  { showSuccess: true },
+);
+
+export const sendSingleSurveyEmail = withApiHandler(
+  async (recipientId, payload = {}) => {
+    const { data } = await api.post(`/surveyguru/recipients/${recipientId}/email`, payload);
+    return data;
+  },
+  { showSuccess: true },
+);
+
+export const sendSingleSurveyWhatsApp = withApiHandler(
+  async (recipientId, payload = {}) => {
+    const { data } = await api.post(`/surveyguru/recipients/${recipientId}/whatsapp`, payload);
+    return data;
+  },
+  { showSuccess: true },
+);
+
 export const deleteRecipient = withApiHandler(
   async (recipientId) => {
     const { data } = await api.delete(`/surveyguru/recipients/${recipientId}`);
