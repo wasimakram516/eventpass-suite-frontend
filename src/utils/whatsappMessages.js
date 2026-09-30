@@ -10,7 +10,7 @@ export const WHATSAPP_VARIABLE_SOURCES = Object.freeze({
   TEXT: "text",
 });
 
-export const WHATSAPP_EVENT_TYPES = Object.freeze(["closed", "public", "checkout"]);
+export const WHATSAPP_EVENT_TYPES = Object.freeze(["closed", "public", "checkout", "surveyguru"]);
 
 export const WHATSAPP_APPROVED = "approved";
 

@@ -23,6 +23,11 @@ import CustomNotificationForm from "@/components/modals/CustomNotificationForm";
 import DefaultNotificationInfo from "@/components/modals/DefaultNotificationInfo";
 import WhatsAppMessagePicker, { canSendWhatsAppChoice } from "@/components/whatsapp/WhatsAppMessagePicker";
 import useWhatsAppMessageChoice from "@/hooks/useWhatsAppMessageChoice";
+import {
+    DEFAULT_RECIPIENT_FILTER,
+    REGISTRATION_RECIPIENT_FILTER_PAYLOADS,
+    getNotificationRecipientFilterPayload,
+} from "@/utils/notificationRecipientFilters";
 
 const translations = {
     en: {
@@ -39,6 +44,7 @@ const translations = {
         emailNotSent: "Email Not Sent",
         whatsappSent: "WhatsApp Sent",
         whatsappNotSent: "WhatsApp Not Sent",
+        close: "Close",
     },
     ar: {
         title: "إرسال الإشعارات",
@@ -57,51 +63,6 @@ const translations = {
     },
 };
 
-const getFilterStates = (selectedFilter) => {
-    const defaultFilters = { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" };
-
-    switch (selectedFilter) {
-        case "all":
-            return defaultFilters;
-        case "approved":
-        case "rejected":
-        case "confirmed":
-        case "notConfirmed":
-        case "pending":
-            return {
-                statusFilter: selectedFilter,
-                emailSentFilter: "all",
-                whatsappSentFilter: "all",
-            };
-        case "emailSent":
-            return {
-                statusFilter: "all",
-                emailSentFilter: "sent",
-                whatsappSentFilter: "all",
-            };
-        case "emailNotSent":
-            return {
-                statusFilter: "all",
-                emailSentFilter: "notSent",
-                whatsappSentFilter: "all",
-            };
-        case "whatsappSent":
-            return {
-                statusFilter: "all",
-                emailSentFilter: "all",
-                whatsappSentFilter: "sent",
-            };
-        case "whatsappNotSent":
-            return {
-                statusFilter: "all",
-                emailSentFilter: "all",
-                whatsappSentFilter: "notSent",
-            };
-        default:
-            return defaultFilters;
-    }
-};
-
 /**
  * Send Notifications modal for an event's registrations. "Default" sends what is
  * configured for the event (its custom email template if it has one, else the
@@ -114,6 +75,8 @@ const getFilterStates = (selectedFilter) => {
  * @param {Function} props.onSendEmail - Called with {type, customTemplate, file, ...filters}
  * @param {Function} props.onSendWhatsApp - Called with {type, ...filters}
  * @param {object|null} [props.event] - The event being notified about
+ * @param {Array<{value: string, label: string}>} [props.filterOptions] - Module-specific recipient dropdown options
+ * @param {Record<string, object>} [props.filterPayloads] - API payload indexed by filter value
  * @returns {JSX.Element}
  */
 const BulkEmailModal = ({
@@ -127,27 +90,36 @@ const BulkEmailModal = ({
     useApprovedRejected = false,
     canSendEmail = true,
     canSendWhatsapp = true,
+    title,
+    filterLabel,
+    filterOptions,
+    filterPayloads = REGISTRATION_RECIPIENT_FILTER_PAYLOADS,
+    initialFilter = DEFAULT_RECIPIENT_FILTER,
+    whatsappResourceId,
+    loadWhatsAppMessages,
+    loadWhatsAppPreview,
+    showAttachment = true,
+    isSurvey = false,
 }) => {
     const { t, dir } = useI18nLayout(translations);
-    const [selectedFilter, setSelectedFilter] = useState("all");
+    const [selectedFilter, setSelectedFilter] = useState(initialFilter);
     const draft = useNotificationDraft(event, open);
     const { notificationType, composer } = draft;
     const whatsappChoice = useWhatsAppMessageChoice({
         event,
         enabled: open && canSendWhatsapp,
+        resourceId: whatsappResourceId,
+        loadMessages: loadWhatsAppMessages,
+        loadPreview: loadWhatsAppPreview,
     });
 
     useEffect(() => {
-        setSelectedFilter("all");
-    }, [isApprovalBased]);
-
-    useEffect(() => {
-        if (!open) setSelectedFilter("all");
-    }, [open]);
+        setSelectedFilter(initialFilter);
+    }, [initialFilter, isApprovalBased, useApprovedRejected, open]);
 
     const handleClose = () => {
         draft.reset();
-        setSelectedFilter("all");
+        setSelectedFilter(initialFilter);
         onClose();
     };
 
@@ -159,7 +131,7 @@ const BulkEmailModal = ({
             type: notificationType,
             customTemplate: isCustom ? composer.buildTemplate() : undefined,
             file: isCustom ? draft.attachedFile : undefined,
-            ...getFilterStates(selectedFilter),
+            ...getNotificationRecipientFilterPayload(selectedFilter, filterPayloads, initialFilter),
         });
     };
 
@@ -167,9 +139,31 @@ const BulkEmailModal = ({
         onSendWhatsApp({
             type: notificationType,
             messageId: whatsappChoice.messageId,
-            ...getFilterStates(selectedFilter),
+            ...getNotificationRecipientFilterPayload(selectedFilter, filterPayloads, initialFilter),
         });
     };
+
+    const defaultFilterOptions = [
+        { value: "all", label: t.all },
+        ...(isApprovalBased
+            ? useApprovedRejected
+                ? [
+                    { value: "approved", label: t.approved },
+                    { value: "rejected", label: t.rejected },
+                    { value: "pending", label: t.pending },
+                ]
+                : [
+                    { value: "confirmed", label: t.confirmed },
+                    { value: "notConfirmed", label: t.notConfirmed },
+                    { value: "pending", label: t.pending },
+                ]
+            : []),
+        { value: "emailSent", label: t.emailSent },
+        { value: "emailNotSent", label: t.emailNotSent },
+        { value: "whatsappSent", label: t.whatsappSent },
+        { value: "whatsappNotSent", label: t.whatsappNotSent },
+    ];
+    const availableFilterOptions = filterOptions ?? defaultFilterOptions;
 
     return (
         <Dialog
@@ -190,8 +184,8 @@ const BulkEmailModal = ({
                     pb: 1,
                 }}
             >
-                {t.title}
-                <IconButton onClick={handleClose} size="small">
+                {title || t.title}
+                <IconButton onClick={handleClose} size="small" aria-label={t.close || "Close"}>
                     <ICONS.close />
                 </IconButton>
             </DialogTitle>
@@ -200,45 +194,20 @@ const BulkEmailModal = ({
                     {/* Filter Dropdown */}
                     <Box>
                         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                            {t.filterByStatus}:
+                            {filterLabel || t.filterByStatus}:
                         </Typography>
                         <FormControl fullWidth size="small">
                             <Select
                                 value={selectedFilter}
                                 onChange={(e) => setSelectedFilter(e.target.value)}
+                                inputProps={{ "aria-label": filterLabel || t.filterByStatus }}
                                 displayEmpty
                             >
-                                <MenuItem value="all">{t.all}</MenuItem>
-                                {isApprovalBased ? (
-                                    useApprovedRejected ? (
-                                        [
-                                            <MenuItem key="approved" value="approved">{t.approved}</MenuItem>,
-                                            <MenuItem key="rejected" value="rejected">{t.rejected}</MenuItem>,
-                                            <MenuItem key="pending" value="pending">{t.pending}</MenuItem>,
-                                            <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
-                                            <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
-                                            <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
-                                            <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
-                                        ]
-                                    ) : (
-                                        [
-                                            <MenuItem key="confirmed" value="confirmed">{t.confirmed}</MenuItem>,
-                                            <MenuItem key="notConfirmed" value="notConfirmed">{t.notConfirmed}</MenuItem>,
-                                            <MenuItem key="pending" value="pending">{t.pending}</MenuItem>,
-                                            <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
-                                            <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
-                                            <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
-                                            <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
-                                        ]
-                                    )
-                                ) : (
-                                    [
-                                        <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
-                                        <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
-                                        <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
-                                        <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
-                                    ]
-                                )}
+                                {availableFilterOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                     </Box>
@@ -265,6 +234,8 @@ const BulkEmailModal = ({
                             event={event}
                             attachedFile={draft.attachedFile}
                             onFileChange={draft.setAttachedFile}
+                            showAttachment={showAttachment}
+                            isSurvey={isSurvey}
                         />
                     )}
                 </Stack>

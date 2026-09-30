@@ -17,7 +17,14 @@ import { moduleKeyForEventType, pickDefaultMessageId } from "@/utils/whatsappMes
  * @param {string} [params.registrationId] - Preview for this registration instead of the first one
  * @returns {{messages: Array, messageId: string, setMessageId: Function, loading: boolean, preview: object|null, previewLoading: boolean}}
  */
-export default function useWhatsAppMessageChoice({ event, enabled, registrationId }) {
+export default function useWhatsAppMessageChoice({
+  event,
+  enabled,
+  registrationId,
+  resourceId,
+  loadMessages,
+  loadPreview,
+}) {
   const moduleKey = moduleKeyForEventType(event?.eventType);
   const slug = event?.slug;
   const [messages, setMessages] = useState([]);
@@ -27,10 +34,10 @@ export default function useWhatsAppMessageChoice({ event, enabled, registrationI
   const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !moduleKey || !slug) return undefined;
+    if (!enabled || (!loadMessages && (!moduleKey || !slug))) return undefined;
     let cancelled = false;
     setLoading(true);
-    getEventWhatsAppMessages(moduleKey, slug)
+    (loadMessages ? loadMessages(resourceId) : getEventWhatsAppMessages(moduleKey, slug))
       .then((list) => {
         if (!cancelled) setMessages(Array.isArray(list) ? list : []);
       })
@@ -40,20 +47,22 @@ export default function useWhatsAppMessageChoice({ event, enabled, registrationI
     return () => {
       cancelled = true;
     };
-  }, [enabled, moduleKey, slug]);
+  }, [enabled, moduleKey, slug, resourceId, loadMessages]);
 
   useEffect(() => {
     setMessageId(pickDefaultMessageId(messages));
   }, [messages]);
 
   useEffect(() => {
-    if (!enabled || !messageId || !moduleKey || !slug) {
+    if (!enabled || !messageId || (!loadPreview && (!moduleKey || !slug))) {
       setPreview(null);
       return undefined;
     }
     let cancelled = false;
     setPreviewLoading(true);
-    previewEventWhatsAppMessage(moduleKey, slug, { messageId, registrationId })
+    (loadPreview
+      ? loadPreview(resourceId, { messageId, recipientId: registrationId })
+      : previewEventWhatsAppMessage(moduleKey, slug, { messageId, registrationId }))
       .then((result) => {
         if (!cancelled) setPreview(result?.error ? null : result);
       })
@@ -63,7 +72,7 @@ export default function useWhatsAppMessageChoice({ event, enabled, registrationI
     return () => {
       cancelled = true;
     };
-  }, [enabled, messageId, moduleKey, slug, registrationId]);
+  }, [enabled, messageId, moduleKey, slug, registrationId, resourceId, loadPreview]);
 
   return { messages, messageId, setMessageId, loading, preview, previewLoading };
 }

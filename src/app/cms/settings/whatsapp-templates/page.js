@@ -113,7 +113,7 @@ const translations = {
     removeDefaultTitle: "Remove default message?",
     removeDefaultMessage: "Events of these types will no longer be able to send it.",
     missingTemplate: "Template removed",
-    eventTypes: { closed: "CheckIn", public: "EventReg", checkout: "Checkout" },
+    eventTypes: { closed: "CheckIn", public: "EventReg", checkout: "Checkout", surveyguru: "SurveyGuru" },
   },
   ar: {
     title: "قوالب واتساب",
@@ -160,7 +160,7 @@ const translations = {
     removeDefaultTitle: "إزالة الرسالة الافتراضية؟",
     removeDefaultMessage: "لن تتمكن فعاليات هذه الأنواع من إرسالها بعد الآن.",
     missingTemplate: "تمت إزالة القالب",
-    eventTypes: { closed: "CheckIn", public: "EventReg", checkout: "Checkout" },
+    eventTypes: { closed: "CheckIn", public: "EventReg", checkout: "Checkout", surveyguru: "SurveyGuru" },
   },
 };
 

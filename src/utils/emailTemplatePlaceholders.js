@@ -29,6 +29,8 @@ export const EMAIL_TEMPLATE_RESERVED = Object.freeze({
   REGISTRATION_DETAILS: "Registration Details",
   CONFIRMATION_BUTTON: "Confirmation Button",
   CONFIRMATION_LINK: "Confirmation Link",
+  SURVEY_BUTTON: "Survey Button",
+  SURVEY_LINK: "Survey Link",
   PAYMENT_SUMMARY: "Payment Summary",
   CUSTOM_IMAGE: "Custom Image",
   CUSTOM_LINK: "Custom Link",
@@ -56,6 +58,7 @@ const SUBJECT_UNSUPPORTED_KEYS = Object.freeze([
   EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
   EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
   EMAIL_TEMPLATE_RESERVED.CONFIRMATION_LINK,
+  EMAIL_TEMPLATE_RESERVED.SURVEY_BUTTON,
   EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE,
   EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK,
 ]);
@@ -158,7 +161,7 @@ export const EMAIL_PLACEHOLDER_GROUPS = Object.freeze({
  * @param {{isPaid: boolean, isCheckIn: boolean}} options
  * @returns {Record<string, string[]>} Built in names keyed by group id
  */
-function getBuiltInGroups({ isPaid, isCheckIn }) {
+function getBuiltInGroups({ isPaid, isCheckIn, isSurvey }) {
   const R = EMAIL_TEMPLATE_RESERVED;
   const G = EMAIL_PLACEHOLDER_GROUPS;
   return {
@@ -184,7 +187,10 @@ function getBuiltInGroups({ isPaid, isCheckIn }) {
     [G.ATTENDEE_DETAILS]: [R.REGISTRATION_DETAILS],
     [G.PAYMENT]: isPaid ? [R.PAYMENT_SUMMARY] : [],
     [G.CUSTOM_MEDIA]: [R.CUSTOM_IMAGE, R.CUSTOM_LINK],
-    [G.LINKS]: isCheckIn ? [R.CONFIRMATION_BUTTON, R.CONFIRMATION_LINK] : [],
+    [G.LINKS]: [
+      ...(isCheckIn ? [R.CONFIRMATION_BUTTON, R.CONFIRMATION_LINK] : []),
+      ...(isSurvey ? [R.SURVEY_BUTTON, R.SURVEY_LINK] : []),
+    ],
   };
 }
 
@@ -194,8 +200,8 @@ function getBuiltInGroups({ isPaid, isCheckIn }) {
  * @param {{isPaid?: boolean, isCheckIn?: boolean}} options
  * @returns {string[]} Reserved placeholder names available for this event
  */
-export function getReservedPlaceholderNames({ isPaid = false, isCheckIn = false } = {}) {
-  return Object.values(getBuiltInGroups({ isPaid, isCheckIn })).flat();
+export function getReservedPlaceholderNames({ isPaid = false, isCheckIn = false, isSurvey = false } = {}) {
+  return Object.values(getBuiltInGroups({ isPaid, isCheckIn, isSurvey })).flat();
 }
 
 /**
@@ -207,8 +213,8 @@ export function getReservedPlaceholderNames({ isPaid = false, isCheckIn = false 
  * @param {{useCustomFields?: boolean, formFields?: Array<{inputName?: string}>, isPaid?: boolean, isCheckIn?: boolean}} event
  * @returns {Array<{id: string, names: string[]}>} Non empty groups in display order
  */
-export function getPlaceholderGroups({ useCustomFields, formFields, isPaid = false, isCheckIn = false }) {
-  const builtIn = getBuiltInGroups({ isPaid, isCheckIn });
+export function getPlaceholderGroups({ useCustomFields, formFields, isPaid = false, isCheckIn = false, isSurvey = false }) {
+  const builtIn = getBuiltInGroups({ isPaid, isCheckIn, isSurvey });
   const fieldNames = getTemplateFieldNames({ useCustomFields, formFields });
   return Object.values(EMAIL_PLACEHOLDER_GROUPS)
     .map((id) => ({
@@ -264,11 +270,12 @@ export function getTemplateWarnings({
   selectedFields = [],
   isPaid = false,
   isCheckIn = false,
+  isSurvey = false,
 }) {
   const warnings = [];
   const knownFieldKeys = getKnownFieldKeys({ useCustomFields, formFields });
   const reservedKeys = new Set(
-    getReservedPlaceholderNames({ isPaid, isCheckIn }).map(normalizePlaceholderKey),
+    getReservedPlaceholderNames({ isPaid, isCheckIn, isSurvey }).map(normalizePlaceholderKey),
   );
   const bodyNames = findPlaceholders(body);
   const headerNames = findPlaceholders(header);
