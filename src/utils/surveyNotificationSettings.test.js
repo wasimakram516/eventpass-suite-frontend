@@ -66,6 +66,23 @@ test("validateSurveyNotificationSettings requires both custom email fields", () 
   );
 });
 
+test("disabled WhatsApp settings ignore incomplete draft messages", () => {
+  const settings = {
+    ...createSurveyNotificationSettings(savedForm, linkedEvent),
+    useCustomWhatsAppMessages: false,
+    whatsappMessages: [{ label: "", template: "", variables: [] }],
+  };
+  const catalog = {
+    templatesById: new Map([["template-1", { _id: "template-1", variables: [] }]]),
+    placeholders: [],
+  };
+
+  assert.equal(validateSurveyNotificationSettings(settings, catalog, false), null);
+  const payload = buildSurveyNotificationPayload(settings, catalog);
+  assert.equal(payload.useCustomWhatsAppMessages, false);
+  assert.equal(Object.hasOwn(payload, "whatsappMessages"), false);
+});
+
 test("buildSurveyNotificationPayload includes both enabled template configurations", () => {
   const settings = createSurveyNotificationSettings(savedForm, linkedEvent);
   const catalog = {
