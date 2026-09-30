@@ -26,6 +26,7 @@ const LIGHT_TEXT = "#ffffff";
 const LUMINANCE_THRESHOLD = 0.6;
 const SAMPLE_EVENT_NAME = "Your Event";
 const SAMPLE_CONFIRMATION_LINK = "https://example.com/checkin/event/sample-event?token=A1B2C3D4E5";
+const SAMPLE_SURVEY_LINK = "https://example.com/surveyguru/en/sample-survey?token=A1B2C3D4E5";
 
 const HTML_ESCAPES = Object.freeze({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" });
 
@@ -188,6 +189,7 @@ export function buildEmailPreview({
   qrDataUrl,
   isPaid = false,
   isCheckIn = false,
+  isSurvey = false,
   eventInfo,
   language = "en",
 }) {
@@ -250,6 +252,18 @@ export function buildEmailPreview({
     value: isCheckIn ? buildSampleConfirmationLinkHtml(accentColor) : "",
     html: true,
   });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.SURVEY_BUTTON, {
+    value: isSurvey
+      ? buildSampleConfirmationButtonHtml(accentColor).replace("Confirm your attendance", "Open Survey")
+      : "",
+    html: true,
+  });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.SURVEY_LINK, {
+    value: isSurvey
+      ? buildSampleConfirmationLinkHtml(accentColor).replaceAll(SAMPLE_CONFIRMATION_LINK, SAMPLE_SURVEY_LINK)
+      : "",
+    html: true,
+  });
   setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE, {
     value: customImageUrl
       ? `<img src="${escapeHtml(customImageUrl)}" alt="" width="${customImageWidth}" style="width:${customImageWidth}px;max-width:100%;height:auto;" />`
@@ -273,11 +287,15 @@ export function buildEmailPreview({
     EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
     EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
     EMAIL_TEMPLATE_RESERVED.CONFIRMATION_LINK,
+    EMAIL_TEMPLATE_RESERVED.SURVEY_BUTTON,
     EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE,
     EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK,
   ]) {
     setPlaceholderEntry(subjectEntries, blockName, { value: "" });
   }
+  setPlaceholderEntry(subjectEntries, EMAIL_TEMPLATE_RESERVED.SURVEY_LINK, {
+    value: isSurvey ? SAMPLE_SURVEY_LINK : "",
+  });
 
   const body = renderPlaceholders(template.body, visualEntries);
   const paymentAppend = usedInBodyOrHeader(EMAIL_TEMPLATE_RESERVED.PAYMENT_SUMMARY) ? "" : paymentHtml;

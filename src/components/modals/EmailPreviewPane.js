@@ -58,7 +58,7 @@ function useDebouncedValue(value, delayMs) {
  * @param {object} [props.eventInfo] - Event details (see emailEventDetails); samples fill what is missing
  * @returns {JSX.Element}
  */
-const EmailPreviewPane = ({ formData, isPaid, isCheckIn = false, eventInfo }) => {
+const EmailPreviewPane = ({ formData, isPaid, isCheckIn = false, isSurvey = false, eventInfo }) => {
   const { t } = useI18nLayout(translations);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
@@ -98,7 +98,8 @@ const EmailPreviewPane = ({ formData, isPaid, isCheckIn = false, eventInfo }) =>
         logoUrl: formData.logoPreview || formData.organizerLogoPreview || "",
         qrDataUrl,
         isPaid,
-        isCheckIn,
+          isCheckIn,
+          isSurvey,
         eventInfo: stableEventInfo,
         language: formData.defaultLanguage,
       }),
@@ -121,6 +122,7 @@ const EmailPreviewPane = ({ formData, isPaid, isCheckIn = false, eventInfo }) =>
       qrDataUrl,
       isPaid,
       isCheckIn,
+      isSurvey,
       stableEventInfo,
     ],
   );

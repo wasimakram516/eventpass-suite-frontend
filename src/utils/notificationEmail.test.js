@@ -9,6 +9,7 @@ import {
   hasEventEmailTemplate,
   isCheckInEvent,
   isEventPaid,
+  isNotificationSendSuccessful,
   validateCustomTemplateForm,
 } from "./notificationEmail.js";
 
@@ -117,4 +118,10 @@ test("isCheckInEvent is true only for closed (CheckIn) events", () => {
   assert.equal(isCheckInEvent({ eventType: "closed" }), true);
   assert.equal(isCheckInEvent({ eventType: "public" }), false);
   assert.equal(isCheckInEvent(null), false);
+});
+
+test("isNotificationSendSuccessful rejects the resolved error shape used by API helpers", () => {
+  assert.equal(isNotificationSendSuccessful({ error: true, message: "Send failed" }), false);
+  assert.equal(isNotificationSendSuccessful({ sent: 1, failed: 0 }), true);
+  assert.equal(isNotificationSendSuccessful(undefined), true);
 });

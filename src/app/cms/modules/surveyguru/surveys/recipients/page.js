@@ -32,13 +32,18 @@ import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
-import SurveyBulkNotificationModal from "@/components/modals/SurveyBulkNotificationModal";
+import BulkEmailModal from "@/components/modals/BulkEmailModal";
+import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import AppCard from "@/components/cards/AppCard";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 import { toArabicDigits } from "@/utils/arabicDigits";
+import {
+  SURVEY_DEFAULT_RECIPIENT_FILTER,
+  SURVEY_RECIPIENT_FILTER_PAYLOADS,
+} from "@/utils/notificationRecipientFilters";
 
 import { getAllBusinesses } from "@/services/businessService";
 import { getEventsByBusinessId } from "@/services/eventreg/eventService";
@@ -51,6 +56,11 @@ import {
   clearRecipientsForForm,
   exportRecipientsCsv,
   sendBulkSurveyEmails,
+  sendBulkSurveyWhatsApp,
+  sendSingleSurveyEmail,
+  sendSingleSurveyWhatsApp,
+  getSurveyWhatsAppMessages,
+  previewSurveyWhatsAppMessage,
 } from "@/services/surveyguru/surveyRecipientService";
 import useSurveyGuruSocket from "@/hooks/modules/surveyguru/useSurveyGuruSocket";
 
@@ -117,6 +127,12 @@ const translations = {
     sendingEmails: "Sending Emails...",
     bulkEmailSuccess:
       "Bulk notification completed — {sent} sent, {failed} failed, out of {total} total.",
+    notificationTitle: "Send survey notifications",
+    notificationRecipients: "Recipients",
+    allRecipients: "All recipients",
+    recipientsNotResponded: "Recipients who have not responded",
+    recipientsNeverEmailed: "Recipients never emailed",
+    recipientsNeverWhatsapp: "Recipients never sent WhatsApp",
     showing: "Showing",
     of: "of",
     records: "records",
@@ -183,6 +199,12 @@ const translations = {
     sendingEmails: "جاري إرسال البريد...",
     bulkEmailSuccess:
       "اكتمل إرسال الإشعارات الجماعية — {sent} تم الإرسال، {failed} فشل، من أصل {total}.",
+    notificationTitle: "إرسال إشعارات الاستبيان",
+    notificationRecipients: "المستلمون",
+    allRecipients: "جميع المستلمين",
+    recipientsNotResponded: "المستلمون الذين لم يجيبوا",
+    recipientsNeverEmailed: "المستلمون الذين لم يُرسل إليهم بريد إلكتروني",
+    recipientsNeverWhatsapp: "المستلمون الذين لم تُرسل إليهم رسالة واتساب",
     showing: "عرض",
     of: "من",
     records: "السجلات",
@@ -243,6 +265,7 @@ export default function RecipientsManagePage() {
 
   const [sendingEmails, setSendingEmails] = useState(false);
   const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+  const [notifyRecipient, setNotifyRecipient] = useState(null);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -521,8 +544,7 @@ export default function RecipientsManagePage() {
     try {
       const result = await sendBulkSurveyEmails(formId, {
         recipientScope: payload.recipientScope || "not_responded",
-        subject: payload.subject ?? "",
-        body: payload.body ?? "",
+        ...(payload.customTemplate ? { customTemplate: payload.customTemplate } : {}),
       });
 
       if (result?.error) {
@@ -530,6 +552,19 @@ export default function RecipientsManagePage() {
       }
     } catch (err) {
       console.error("Bulk survey email send failed:", err);
+      setSendingEmails(false);
+    }
+  };
+
+  const handleSendBulkSurveyWhatsApp = async (payload = {}) => {
+    if (!formId) return;
+    setBulkEmailModalOpen(false);
+    setSendingEmails(true);
+    try {
+      const result = await sendBulkSurveyWhatsApp(formId, payload);
+      if (result?.error) setSendingEmails(false);
+    } catch (error) {
+      console.error("Bulk survey WhatsApp send failed:", error);
       setSendingEmails(false);
     }
   };
@@ -570,6 +605,16 @@ export default function RecipientsManagePage() {
     [events, eventId]
   );
 
+  const surveyNotificationEvent = useMemo(
+    () => ({
+      ...selectedEvent,
+      useCustomEmailTemplate: selectedForm?.useCustomEmailTemplate,
+      emailTemplate: selectedForm?.emailTemplate,
+      defaultLanguage: selectedForm?.defaultLanguage || selectedEvent?.defaultLanguage,
+    }),
+    [selectedEvent, selectedForm],
+  );
+
   const filteredForms = useMemo(
     () =>
       forms.filter(
@@ -583,10 +628,23 @@ export default function RecipientsManagePage() {
   );
   const canBulkImport = useHasPermission("surveyguru", "bulk_import");
   const canSendEmail = useHasPermission("surveyguru", "send_email");
+  const canSendWhatsapp = useHasPermission("surveyguru", "send_whatsapp");
   const canExport = useHasPermission("surveyguru", "export");
   const canDelete = useHasPermission("surveyguru", "delete");
   const canShare = useHasPermission("surveyguru", "share");
   const isWorkflowComplete = Boolean(selectedBusiness?._id && eventId && formId);
+
+  const surveyRecipientFilterOptions = useMemo(
+    () => [
+      { value: "all", label: t.allRecipients },
+      { value: "not_responded", label: t.recipientsNotResponded },
+      { value: "never_notified", label: t.recipientsNeverEmailed },
+      ...(canSendWhatsapp
+        ? [{ value: "never_whatsapp", label: t.recipientsNeverWhatsapp }]
+        : []),
+    ],
+    [canSendWhatsapp, t],
+  );
 
   const onWorkflowEventChange = (nextEventId) => {
     setEventId(nextEventId);
@@ -733,6 +791,13 @@ export default function RecipientsManagePage() {
           locale={language === "ar" ? "ar-SA" : "en-GB"}
         />
         <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
+          {(canSendEmail || canSendWhatsapp) && (
+            <Tooltip title="Notify">
+              <IconButton color="secondary" onClick={() => setNotifyRecipient(r)} aria-label="Notify recipient">
+                <ICONS.email fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {canShare && (
           <Tooltip title={t.copyLink}>
             <IconButton
@@ -969,7 +1034,7 @@ export default function RecipientsManagePage() {
                     </Button>
                   )}
 
-                  {canSendEmail && (
+                  {(canSendEmail || canSendWhatsapp) && (
                     <Button
                       variant="contained"
                       color="secondary"
@@ -1152,7 +1217,7 @@ export default function RecipientsManagePage() {
                     </Button>
                   )}
 
-                  {canSendEmail && (
+                  {(canSendEmail || canSendWhatsapp) && (
                     <Button
                       variant="contained"
                       color="secondary"
@@ -1326,11 +1391,42 @@ export default function RecipientsManagePage() {
           confirmButtonIcon={<ICONS.delete fontSize="small" />}
         />
 
-        <SurveyBulkNotificationModal
+        <BulkEmailModal
           open={bulkEmailModalOpen}
-          onClose={() => setBulkEmailModalOpen(false)}
-          onSend={handleSendBulkSurveyEmails}
+          onClose={() => {
+            if (!sendingEmails) setBulkEmailModalOpen(false);
+          }}
+          onSendEmail={handleSendBulkSurveyEmails}
+          onSendWhatsApp={handleSendBulkSurveyWhatsApp}
           sendingEmails={sendingEmails}
+          event={surveyNotificationEvent}
+          canSendEmail={canSendEmail}
+          canSendWhatsapp={canSendWhatsapp}
+          title={t.notificationTitle}
+          filterLabel={t.notificationRecipients}
+          filterOptions={surveyRecipientFilterOptions}
+          filterPayloads={SURVEY_RECIPIENT_FILTER_PAYLOADS}
+          initialFilter={SURVEY_DEFAULT_RECIPIENT_FILTER}
+          whatsappResourceId={selectedForm?._id}
+          loadWhatsAppMessages={getSurveyWhatsAppMessages}
+          loadWhatsAppPreview={previewSurveyWhatsAppMessage}
+          showAttachment={false}
+          isSurvey
+        />
+        <SingleNotificationModal
+          open={Boolean(notifyRecipient)}
+          onClose={() => setNotifyRecipient(null)}
+          onSent={() => refreshRecipients()}
+          registration={notifyRecipient}
+          event={surveyNotificationEvent}
+          canSendEmail={canSendEmail}
+          canSendWhatsapp={canSendWhatsapp}
+          sendEmailNotification={sendSingleSurveyEmail}
+          sendWhatsAppNotification={sendSingleSurveyWhatsApp}
+          whatsappResourceId={selectedForm?._id}
+          loadWhatsAppMessages={getSurveyWhatsAppMessages}
+          loadWhatsAppPreview={previewSurveyWhatsAppMessage}
+          isSurvey
         />
       </Container>
       {/* Filters Modal */}
