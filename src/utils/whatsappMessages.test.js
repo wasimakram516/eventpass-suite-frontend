@@ -17,6 +17,7 @@ import {
   validateWhatsAppMessage,
   validateWhatsAppMessages,
   whatsappEventTypeFor,
+  WHATSAPP_EVENT_TYPES,
 } from "./whatsappMessages.js";
 
 const template = { _id: "t1", body: "Hello {{1}}, RSVP: {{2}}", variables: ["1", "2"] };
@@ -41,6 +42,10 @@ test("whatsappEventTypeFor: maps the event modal mode to an event type", () => {
   assert.equal(whatsappEventTypeFor({ isClosed: true }), "closed");
   assert.equal(whatsappEventTypeFor({ moduleKey: "eventreg" }), "public");
   assert.equal(whatsappEventTypeFor({ moduleKey: "checkout" }), "checkout");
+});
+
+test("SurveyGuru is a supported WhatsApp default-message scope", () => {
+  assert.ok(WHATSAPP_EVENT_TYPES.includes("surveyguru"));
 });
 
 test("buildVariableRows: one row per slot, keeping existing rows", () => {
