@@ -236,7 +236,7 @@ const translations = {
     whatsappNotSent: "لم يتم إرسال واتساب",
     inviteSent: "تم إرسال الدعوة",
     inviteNotSent: "لم تُرسل الدعوة",
-    exportbadges: "تصدير الشارات",
+    exportBadges: "تصدير الشارات",
     printBadge: "طباعة الشارة",
     editRegistration: "تعديل التسجيل",
     createRegistration: "جديد",

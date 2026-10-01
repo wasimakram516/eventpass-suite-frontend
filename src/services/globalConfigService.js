@@ -38,21 +38,6 @@ export const deleteGlobalConfig = withApiHandler(
   { showSuccess: true }
 );
 
-// Sync fonts to database
-export const syncFonts = withApiHandler(
-  async (fonts) => {
-    const { data } = await api.post("/global-config/fonts/sync", { fonts });
-    return data;
-  },
-  { showSuccess: false }
-);
-
-// Get fonts from database
-export const getFonts = withApiHandler(async () => {
-  const { data } = await api.get("/global-config/fonts");
-  return data;
-});
-
 export const updateDefaultQrWrapper = withApiHandler(
   async (formData) => {
     const { data } = await api.put("/global-config/default-qr-wrapper", formData, {
