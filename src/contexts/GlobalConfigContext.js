@@ -6,7 +6,7 @@ import {
   useState,
   useCallback,
 } from "react";
-import { getGlobalConfig, getFonts, syncFonts } from "@/services/globalConfigService";
+import { getGlobalConfig } from "@/services/globalConfigService";
 import { getSelectableFonts } from "@/utils/fontRegistry";
 
 const GlobalConfigContext = createContext();
@@ -29,22 +29,10 @@ export const GlobalConfigProvider = ({ children }) => {
     }
   }, []);
 
-  const loadFonts = useCallback(async () => {
-    try {
-      setFontsLoading(true);
-      await getFonts();
-      setFonts(getSelectableFonts());
-    } catch (error) {
-      console.error("Failed to fetch fonts, using local registered fonts:", error);
-      setFonts(getSelectableFonts());
-    } finally {
-      setFontsLoading(false);
-    }
-  }, []);
-
-  const syncFontsToDB = useCallback(async () => {
-    const result = await syncFonts(getSelectableFonts());
-    return result;
+  const loadFonts = useCallback(() => {
+    setFontsLoading(true);
+    setFonts(getSelectableFonts());
+    setFontsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -54,7 +42,7 @@ export const GlobalConfigProvider = ({ children }) => {
 
   return (
     <GlobalConfigContext.Provider
-      value={{ globalConfig, setGlobalConfig, refetchConfig, loading, fonts, fontsLoading, syncFontsToDB }}
+      value={{ globalConfig, setGlobalConfig, refetchConfig, loading, fonts, fontsLoading }}
     >
       {children}
     </GlobalConfigContext.Provider>

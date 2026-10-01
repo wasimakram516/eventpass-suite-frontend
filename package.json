@@ -6,7 +6,6 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "fonts:validate": "node scripts/validateFontRegistry.js",
-    "fonts:sync": "node --env-file=.env scripts/syncRegisteredFonts.js",
     "start": "next start",
     "lint": "next lint",
     "test": "npm run fonts:validate && node --experimental-vm-modules --test \"src/**/*.test.js\" \"src/**/*.test.mjs\"",
