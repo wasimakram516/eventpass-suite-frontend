@@ -30,6 +30,7 @@ import { updateDefaultQrWrapper } from "@/services/globalConfigService";
 import { deleteMedia } from "@/services/deleteMediaService";
 import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { findRegisteredFont, getSelectableFonts } from "@/utils/fontRegistry";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -540,11 +541,7 @@ function QrWrapperFieldEditor({
       const fontSelect = document.createElement("select");
       fontSelect.style.cssText = `width:80px;height:32px;padding:4px;border:1px solid ${theme.palette.divider};border-radius:4px;font-size:0.75rem;background-color:${theme.palette.background.paper};color:${theme.palette.text.primary};`; fontSelectRef.current = fontSelect;
 
-      const fontsToUse = availableFonts?.length > 0 ? availableFonts : [
-        { name: "Arial", family: "Arial" },
-        { name: "Futura", family: "Futura" },
-        { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" },
-      ];
+      const fontsToUse = availableFonts?.length > 0 ? availableFonts : getSelectableFonts();
       fontsToUse.forEach((font) => {
         const option = document.createElement("option");
         const fVal = font.family || font.name;
@@ -553,8 +550,9 @@ function QrWrapperFieldEditor({
         option.style.fontFamily = fVal;
         fontSelect.appendChild(option);
       });
-      const currentFont = (formattingRef.current?.fontFamily && String(formattingRef.current.fontFamily).trim()) || "Arial";
-      if (!Array.from(fontSelect.options).some((o) => o.value === currentFont)) {
+      const savedFont = (formattingRef.current?.fontFamily && String(formattingRef.current.fontFamily).trim()) || "Arial";
+      const currentFont = findRegisteredFont(savedFont)?.family || savedFont;
+      if (!Array.from(fontSelect.options).some((o) => o.value.toLowerCase() === currentFont.toLowerCase())) {
         const opt = document.createElement("option");
         opt.value = currentFont;
         opt.textContent = capitalizeFirst(currentFont);

@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "generate-fonts": "node scripts/generateFonts.js",
-    "dev": "node scripts/generateFonts.js && next dev",
-    "build": "node scripts/generateFonts.js && next build --webpack",
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "fonts:validate": "node scripts/validateFontRegistry.js",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --experimental-vm-modules --test \"src/**/*.test.js\" \"src/**/*.test.mjs\"",
+    "test": "npm run fonts:validate && node --experimental-vm-modules --test \"src/**/*.test.js\" \"src/**/*.test.mjs\"",
     "audit:security": "npm audit --audit-level=high"
   },
   "dependencies": {
