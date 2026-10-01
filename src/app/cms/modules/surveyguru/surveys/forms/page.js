@@ -75,6 +75,10 @@ import {
   validateSurveyNotificationSettings,
 } from "@/utils/surveyNotificationSettings";
 import { getSurveyBuilderNavigation } from "@/utils/surveyBuilderNavigation";
+import {
+  canManageSurveyRecipients,
+  getSurveyRecipientUrl,
+} from "@/utils/surveyRecipientNavigation";
 
 const translations = {
   en: {
@@ -88,6 +92,7 @@ const translations = {
     createForm: "Create Survey Form",
     cloneForm: "Clone Survey Form",
     copyLink: "Share Public Link",
+    recipientsAction: "Manage recipients",
     linkCopied: "Link copied!",
     delete: "Delete",
     confirmCloneTitle: "Clone Form",
@@ -163,6 +168,7 @@ const translations = {
     createForm: "إنشاء نموذج الاستبيان",
     cloneForm: "استنساخ نموذج الاستبيان",
     copyLink: "مشاركة الرابط العام",
+    recipientsAction: "إدارة المستلمين",
     linkCopied: "تم نسخ الرابط!",
     delete: "حذف",
     confirmCloneTitle: "استنساخ النموذج",
@@ -1266,6 +1272,17 @@ export default function SurveyFormsManagePage() {
                             }
                           >
                             <ICONS.results fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canManageSurveyRecipients(canView) && (
+                        <Tooltip title={t.recipientsAction}>
+                          <IconButton
+                            aria-label={t.recipientsAction}
+                            color="primary"
+                            onClick={() => router.push(getSurveyRecipientUrl(f._id))}
+                          >
+                            <ICONS.people fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       )}

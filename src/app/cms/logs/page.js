@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSurveyRecipientUrl } from "@/utils/surveyRecipientNavigation";
 import { alpha } from "@mui/material/styles";
 import {
   Box,
@@ -549,10 +550,8 @@ export default function LogsPage() {
     }
     if (moduleName === "SurveyGuru") {
       if (itemType === "SurveyRecipient") {
-        const p = new URLSearchParams();
-        if (log.businessId?._id) p.set("businessId", log.businessId._id);
-        if (searchValue) p.set("search", searchValue);
-        router.push(`/cms/modules/surveyguru/surveys/recipients${p.toString() ? `?${p.toString()}` : ""}`);
+        const formId = log.formId?._id || log.formId;
+        router.push(getSurveyRecipientUrl(formId, searchValue));
       } else {
         router.push(`/cms/modules/surveyguru/surveys/forms${searchQuery}`);
       }

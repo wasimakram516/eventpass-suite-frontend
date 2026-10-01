@@ -38,6 +38,7 @@ import { globalSearch as fetchGlobalSearch } from "@/services/globalSearchServic
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import { getSurveyRecipientUrl } from "@/utils/surveyRecipientNavigation";
 
 const translations = {
   en: {
@@ -238,23 +239,13 @@ export default function GlobalSearchPage() {
       }
 
       if (row.itemType === "SurveyRecipient") {
-        const params = new URLSearchParams();
-        if (row?.businessId) params.set("businessId", String(row.businessId));
-        if (row.eventId) params.set("eventId", String(row.eventId));
-        if (row.formId) params.set("formId", String(row.formId));
         const recipientSearch =
           row.email || row.fullName || row.company || "";
-        if (recipientSearch) {
-          params.set("search", String(recipientSearch));
-        }
-        const qs = params.toString();
-        router.push(
-          `/cms/modules/surveyguru/surveys/recipients${qs ? `?${qs}` : ""}`,
-        );
+        router.push(getSurveyRecipientUrl(row.formId, recipientSearch));
         return;
       }
 
-      router.push("/cms/modules/surveyguru/surveys/recipients");
+      router.push("/cms/modules/surveyguru/surveys/forms");
       return;
     }
 
