@@ -7,7 +7,7 @@ import {
   useCallback,
 } from "react";
 import { getGlobalConfig, getFonts, syncFonts } from "@/services/globalConfigService";
-import { scanFonts } from "@/utils/fontScanner";
+import { getSelectableFonts } from "@/utils/fontRegistry";
 
 const GlobalConfigContext = createContext();
 
@@ -29,35 +29,28 @@ export const GlobalConfigProvider = ({ children }) => {
     }
   }, []);
 
-  const syncFontsToDB = useCallback(async () => {
+  const loadFonts = useCallback(async () => {
     try {
       setFontsLoading(true);
-      const result = await getFonts();
-      if (result?.data?.fonts && result.data.fonts.length > 0) {
-        setFonts(result.data.fonts);
-      } else {
-        const scannedFonts = scanFonts();
-        setFonts(scannedFonts);
-        await syncFonts(scannedFonts);
-      }
+      await getFonts();
+      setFonts(getSelectableFonts());
     } catch (error) {
-      console.error("Failed to fetch fonts, using scanned fonts:", error);
-      const scannedFonts = scanFonts();
-      setFonts(scannedFonts);
-      try {
-        await syncFonts(scannedFonts);
-      } catch (syncError) {
-        console.error("Failed to sync fonts to database:", syncError);
-      }
+      console.error("Failed to fetch fonts, using local registered fonts:", error);
+      setFonts(getSelectableFonts());
     } finally {
       setFontsLoading(false);
     }
   }, []);
 
+  const syncFontsToDB = useCallback(async () => {
+    const result = await syncFonts(getSelectableFonts());
+    return result;
+  }, []);
+
   useEffect(() => {
     refetchConfig();
-    syncFontsToDB();
-  }, [refetchConfig, syncFontsToDB]);
+    loadFonts();
+  }, [refetchConfig, loadFonts]);
 
   return (
     <GlobalConfigContext.Provider
