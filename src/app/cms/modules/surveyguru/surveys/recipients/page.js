@@ -44,6 +44,7 @@ import {
   SURVEY_DEFAULT_RECIPIENT_FILTER,
   SURVEY_RECIPIENT_FILTER_PAYLOADS,
 } from "@/utils/notificationRecipientFilters";
+import { getSurveyRecipientNotificationState } from "@/utils/surveyRecipientNotificationState";
 
 import { getAllBusinesses } from "@/services/businessService";
 import { getEventsByBusinessId } from "@/services/eventreg/eventService";
@@ -84,6 +85,8 @@ const translations = {
     queued: "Queued",
     responded: "Responded",
     notified: "Notified",
+    emailSent: "Email sent",
+    whatsappSent: "WhatsApp sent",
     apply: "Apply",
     cancel: "Cancel",
 
@@ -158,6 +161,8 @@ const translations = {
     queued: "قيد الانتظار",
     responded: "تم الرد",
     notified: "تم الإشعار",
+    emailSent: "تم إرسال البريد الإلكتروني",
+    whatsappSent: "تم إرسال واتساب",
     apply: "تطبيق",
     cancel: "إلغاء",
 
@@ -729,22 +734,8 @@ export default function RecipientsManagePage() {
   };
 
   const RecipientCard = ({ r }) => {
-    const normalizedStatus = String(r?.status || "").toLowerCase();
-    const isResponded =
-      normalizedStatus === "responded" || Boolean(r?.respondedAt);
-    const isNotified =
-      !isResponded &&
-      (normalizedStatus === "notified" ||
-        r?.emailSent === true ||
-        r?.notificationSent === true);
-
-    const chipLabel = isResponded ? t.responded : isNotified ? t.notified : t.queued;
-    const chipColor = isResponded ? "success" : isNotified ? "info" : "default";
-    const chipIcon = isResponded
-      ? <ICONS.verified />
-      : isNotified
-        ? <ICONS.emailOutline />
-        : undefined;
+    const notificationState = getSurveyRecipientNotificationState(r);
+    const hasDelivery = notificationState.emailSent || notificationState.whatsappSent;
 
     return (
       <AppCard variant="outlined" sx={{ borderRadius: 2 }}>
@@ -761,16 +752,42 @@ export default function RecipientsManagePage() {
             }}>
               {r.fullName || "—"}
             </Typography>
-            <Chip
-              size="small"
-              icon={chipIcon}
-              color={chipColor}
-              label={chipLabel}
-              sx={{
-                minWidth: dir === "rtl" ? "120px" : "auto", // Wider in Arabic
-                ml: 2,
-              }}
-            />
+            <Stack
+              direction="row"
+              spacing={0.75}
+              useFlexGap
+              sx={{ ml: 2, flexWrap: "wrap", justifyContent: "flex-end" }}
+            >
+              {notificationState.responded && (
+                <Chip
+                  size="small"
+                  icon={<ICONS.verified />}
+                  color="success"
+                  label={t.responded}
+                />
+              )}
+              {notificationState.emailSent && (
+                <Chip
+                  size="small"
+                  icon={<ICONS.emailOutline />}
+                  color="info"
+                  variant="outlined"
+                  label={t.emailSent}
+                />
+              )}
+              {notificationState.whatsappSent && (
+                <Chip
+                  size="small"
+                  icon={<ICONS.whatsapp />}
+                  color="success"
+                  variant="outlined"
+                  label={t.whatsappSent}
+                />
+              )}
+              {!notificationState.responded && !hasDelivery && (
+                <Chip size="small" color="default" label={t.queued} />
+              )}
+            </Stack>
           </Stack>
           <Typography variant="body2" sx={{
             color: "text.secondary"
