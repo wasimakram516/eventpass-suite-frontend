@@ -17,6 +17,7 @@ import {
 import GameFormModal from "@/components/modals/GameFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 
 import {
@@ -29,12 +30,13 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -155,11 +157,7 @@ export default function GamesPage() {
     fetchBusinesses();
   }, []);
 
-  useEffect(() => {
-    if (user?.role === "business" && user.business?._id && !selectedBusiness) {
-      setSelectedBusiness(user.business.slug);
-    }
-  }, [user, selectedBusiness, setSelectedBusiness]);
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
 
   // Fetch games for selected business
   useEffect(() => {
@@ -260,43 +258,10 @@ export default function GamesPage() {
             <BreadcrumbsNav />
           </Box>
 
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: 2,
-              mb: 3,
-            }}
-          >
-            {/* Heading + Subheading */}
-            <Box>
-              <Typography variant="h5" sx={{
-                fontWeight: "bold"
-              }}>
-                {t.manageGames}
-              </Typography>
-              <Typography variant="body2" sx={{
-                color: "text.secondary"
-              }}>
-                {t.gamesDescription}
-              </Typography>
-            </Box>
-
-            {/* Buttons */}
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: dir === "rtl" ? 2 : 1,
-              }}
-            >
+          <ModuleWorkingHeader title={t.manageGames} description={t.gamesDescription} actions={(
+            <>
               <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
-              {(user?.role === "admin" || user?.role === "superadmin") && (
+              {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
@@ -323,15 +288,14 @@ export default function GamesPage() {
                   {t.createGameButton}
                 </Button>
               )}
-            </Stack>
-          </Box>
+            </>
+          )} />
 
           <Divider sx={{ mt: 2 }} />
         </Box>
 
-        {!selectedBusiness ? (
-          <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={allBusinesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
@@ -537,6 +501,7 @@ export default function GamesPage() {
             ))}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={shareModalOpen}

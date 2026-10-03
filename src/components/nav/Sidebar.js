@@ -188,7 +188,7 @@ export default function Sidebar() {
                     size="large"
                     sx={{
                       color: active ? "primary.contrastText" : "text.secondary",
-                      bgcolor: active ? "primary.light" : "transparent",
+                      bgcolor: active ? "primary.main" : "transparent",
                       ":hover": {
                         bgcolor: "action.hover",
                         color: "primary.main",

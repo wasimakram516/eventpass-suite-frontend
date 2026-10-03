@@ -1,13 +1,12 @@
   "use client";
 
-  import { useState, useMemo } from "react";
+  import { useState, useMemo, useEffect, useRef } from "react";
   import {
     Box,
     Container,
     Typography,
     Divider,
     Stack,
-    Button,
     TextField,
     InputAdornment,
     Chip,
@@ -16,6 +15,11 @@
   import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
   import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
   import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+  import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+  import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+  import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
+  import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+  import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
   import { useRouter } from "next/navigation";
 
   import { useAuth } from "@/contexts/AuthContext";
@@ -23,11 +27,13 @@
   import useI18nLayout from "@/hooks/useI18nLayout";
   import { useModules, useModuleCategories } from "@/hooks/useModules";
   import { useModuleSearch } from "@/hooks/useModuleSearch";
+  import ModuleCard from "@/components/modules/ModuleCard";
   import CoreModuleBanner from "@/components/modules/CoreModuleBanner";
-  import { CategoryCard, CategoryDetailView, ModuleCard, cardGridSx } from "@/components/modules/CategoryCard";
   import { groupByModuleCategory, getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
   import LoadingState from "@/components/LoadingState";
   import { fillTemplate } from "@/utils/stringUtil";
+  import { getModuleWorkingRoute } from "@/utils/moduleWorkingRoutes";
+  import { useHasPermission } from "@/hooks/usePermission";
 
   const translations = {
     en: {
@@ -53,6 +59,7 @@
       openModule: "Open module",
       allModules: "All modules",
       noSearchResults: "No modules match your search.",
+      paymentDashboard: "Payment Dashboard",
     },
     ar: {
       title: "الوحدات",
@@ -77,7 +84,21 @@
       openModule: "فتح الوحدة",
       allModules: "كل الوحدات",
       noSearchResults: "لا توجد وحدات تطابق بحثك.",
+      paymentDashboard: "لوحة المدفوعات",
     },
+  };
+
+  const CATEGORY_ICON_MAP = {
+    EventAvailableOutlined: EventAvailableOutlinedIcon,
+    CampaignOutlined: CampaignOutlinedIcon,
+    SportsEsportsOutlined: SportsEsportsOutlinedIcon,
+    MarkEmailReadOutlined: MarkEmailReadOutlinedIcon,
+    CategoryOutlined: CategoryOutlinedIcon,
+  };
+
+  const getCategoryIconComponent = (categoryId) => {
+    const meta = getCategoryMeta(categoryId);
+    return CATEGORY_ICON_MAP[meta?.iconName] || CategoryOutlinedIcon;
   };
 
   export default function Modules() {
@@ -87,34 +108,45 @@
     const router = useRouter();
 
     const { modules, moduleLabelsById, loading } = useModules(user, { fetchFullCatalog: true, filterByRole: true });
-    const { coreModules, groupedByCategory } = useModuleCategories(modules, groupByModuleCategory);
+    const { coreModules, groupedByCategory: nonCoreGroups } = useModuleCategories(modules, groupByModuleCategory);
+    const canViewCheckoutPayments = useHasPermission("checkout", "view_payments");
 
-    const moduleRoutesById = useMemo(() => {
-      const map = {};
-      modules.forEach((m) => {
-        if (m?.key && m?.route) map[m.key] = m.route;
-      });
-      return map;
-    }, [modules]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
 
-    // Category objects by id, so the EventReg banner can link its category chips.
+    const coreModule = coreModules[0];
+    const groupedByCategory = nonCoreGroups;
+
+    // Default the category filter to Event Operations once the categories
+    // load, rather than starting on "All categories". Only applies once, via
+    // the ref guard, so it never overrides a later explicit click back to All
+    // categories.
+    const appliedDefaultCategoryRef = useRef(false);
+    useEffect(() => {
+      if (appliedDefaultCategoryRef.current) return;
+      if (!groupedByCategory.length) return;
+      const eventOps = groupedByCategory.find(
+        (group) => (group.category?.labels?.en || "").trim().toLowerCase() === "event operations",
+      );
+      if (eventOps) {
+        appliedDefaultCategoryRef.current = true;
+        setSelectedCategoryId(eventOps.category.id);
+      }
+    }, [groupedByCategory]);
+    const moduleRoutesById = useMemo(
+      () => Object.fromEntries(modules.map((module) => [module.key, getModuleWorkingRoute(module)])),
+      [modules],
+    );
     const categoriesById = useMemo(
       () => Object.fromEntries(groupedByCategory.map((group) => [group.category.id, group.category])),
       [groupedByCategory],
     );
-
-    const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-    const [detailCategoryId, setDetailCategoryId] = useState(null);
-    const [searchQuery, setSearchQuery] = useState("");
 
     const { searchFilteredGroups, normalizedQuery } = useModuleSearch({
       groupedByCategory,
       searchQuery,
       language,
     });
-
-    const coreModule = coreModules[0];
-    const isCoreVisible = Boolean(coreModule);
 
     const noSearchMatches = Boolean(normalizedQuery && searchFilteredGroups.length === 0);
 
@@ -124,35 +156,17 @@
     const activeGroup = selectedCategoryId
       ? searchFilteredGroups.find((group) => group.category.id === selectedCategoryId) || null
       : null;
-    const detailGroup = detailCategoryId
-      ? groupedByCategory.find((group) => group.category.id === detailCategoryId) || null
-      : null;
-
     const handleOpenCategory = (categoryId) => {
-      setSelectedCategoryId(categoryId);
+      setSelectedCategoryId((current) => current === categoryId ? null : categoryId);
     };
 
-    const handleOpenModule = (mod) => {
-      if (mod?.route) router.push(mod.route);
-    };
-
-    const handleBackFromDetail = () => {
-      setDetailCategoryId(null);
-    };
-
-    const handleOpenDetail = (categoryId) => {
-      setDetailCategoryId(categoryId);
-    };
-
-    // The search lives in the page header, so it must follow the same rule the
-    // old in-body search did: only while the category overview is on screen.
-    const showSearch = !loading && modules?.length > 0 && !(detailCategoryId && detailGroup);
+    const showSearch = !loading && modules?.length > 0;
 
     return (
       <Container
         maxWidth={false}
         dir={dir}
-        sx={{ maxWidth: 1400, pb: 8, bgcolor: "background.default", px: { xs: 0 } }}
+        sx={{ maxWidth: 1760, pb: 8, bgcolor: "background.default", px: { xs: 2, md: 3, lg: 4 } }}
       >
         <Box sx={{ mb: 3 }}>
           <Box
@@ -181,7 +195,6 @@
                   setSearchQuery(event.target.value);
                   if (event.target.value) {
                     setSelectedCategoryId(null);
-                    setDetailCategoryId(null);
                   }
                 }}
                 placeholder={t.searchModules}
@@ -233,17 +246,9 @@
               </Stack>
             )}
           </Stack>
-        ) : detailCategoryId && detailGroup ? (
-          <CategoryDetailView
-            group={detailGroup}
-            language={language}
-            t={t}
-            onBack={handleBackFromDetail}
-            onOpenModule={handleOpenModule}
-          />
         ) : (
           <Box>
-            {isCoreVisible && (
+            {coreModule && (
               <CoreModuleBanner
                 coreModule={coreModule}
                 moduleLabelsById={moduleLabelsById}
@@ -252,23 +257,18 @@
                 onOpenCategory={handleOpenCategory}
                 language={language}
                 t={t}
+                onClick={() => router.push(getModuleWorkingRoute(coreModule))}
               />
             )}
-
             {noSearchMatches ? (
               <Typography color="text.secondary" sx={{ textAlign: align }}>
                 {t.noSearchResults}
               </Typography>
             ) : (
               <Box>
+                {/* "All categories" last, so the default-selected category
+                    (Event Operations) reads first. */}
                 <Stack direction="row" sx={{ flexWrap: "wrap", rowGap: { xs: 1, md: 0.75 }, columnGap: 1, mb: 4 }}>
-                  <Chip
-                    label={`${t.allCategories} (${totalModuleCount})`}
-                    clickable
-                    onClick={() => setSelectedCategoryId(null)}
-                    color={!selectedCategoryId ? "primary" : "default"}
-                    variant={!selectedCategoryId ? "filled" : "outlined"}
-                  />
                   {searchFilteredGroups.map((group) => (
                     <Chip
                       key={group.category.id}
@@ -279,47 +279,99 @@
                       variant={group.category.id === selectedCategoryId ? "filled" : "outlined"}
                     />
                   ))}
+                  <Chip
+                    label={`${t.allCategories} (${totalModuleCount})`}
+                    clickable
+                    onClick={() => setSelectedCategoryId(null)}
+                    color={!selectedCategoryId ? "primary" : "default"}
+                    variant={!selectedCategoryId ? "filled" : "outlined"}
+                  />
                 </Stack>
 
-                {selectedCategoryId && activeGroup ? (
-                  <Box>
-                    <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-                      <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
-                        {getCategoryLabel(activeGroup.category, language)}
+                <Box>
+                  <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+                    <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
+                      {selectedCategoryId && activeGroup
+                        ? getCategoryLabel(activeGroup.category, language)
+                        : t.exploreEcosystem}
+                    </Typography>
+                    <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {fillTemplate(t.categorySummary, { count: totalCategoryCount })}
                       </Typography>
-                      <Button size="small" onClick={() => handleOpenDetail(activeGroup.category.id)} sx={{ textTransform: "none" }}>
-                        {t.openCategory} ›
-                      </Button>
-                    </Stack>
-                    <Box sx={cardGridSx}>
-                      {activeGroup.items.map((mod) => (
-                        <ModuleCard key={mod.key} mod={mod} categoryLabel={getCategoryLabel(activeGroup.category, language)} categoryColor={getCategoryMeta(activeGroup.category.id)?.color} language={language} onClick={handleOpenModule} />
-                      ))}
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box>
-                    <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-                      <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
-                        {t.exploreEcosystem}
+                      <Typography variant="body2" color="text.secondary">
+                        {fillTemplate(t.moduleSummary, { count: totalModuleCount })}
                       </Typography>
-                      <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {fillTemplate(t.categorySummary, { count: totalCategoryCount })}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {fillTemplate(t.moduleSummary, { count: totalModuleCount })}
-                        </Typography>
-                      </Stack>
                     </Stack>
+                  </Stack>
 
-                    <Box sx={cardGridSx}>
-                      {searchFilteredGroups.map((group) => (
-                        <CategoryCard key={group.category.id} group={group} language={language} onOpenCategory={handleOpenCategory} onOpenModule={handleOpenModule} t={t} />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
+                  <Stack spacing={5}>
+                    {(selectedCategoryId && activeGroup ? [activeGroup] : searchFilteredGroups).map((group) => {
+                      const CategoryIcon = getCategoryIconComponent(group.category.id);
+                      return (
+                      <Box key={group.category.id} sx={{ p: { xs: 2, sm: 3 } }}>
+                        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: "50%",
+                                bgcolor: (theme) => `${theme.palette.primary.main}14`,
+                                color: "primary.main",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <CategoryIcon fontSize="small" />
+                            </Box>
+                            <Box>
+                            <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
+                              {getCategoryLabel(group.category, language)}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
+                              {getCategoryMeta(group.category.id)?.descriptions?.[language] ?? getCategoryMeta(group.category.id)?.descriptions?.en ?? ""}
+                            </Typography>
+                            </Box>
+                          </Stack>
+                          <Chip size="small" label={group.items.length} color="primary" variant="outlined" />
+                        </Stack>
+                        <Divider sx={{ mb: 3 }} />
+                        <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3 }}>
+                          {group.items.map((mod) => {
+                            const workingRoute = getModuleWorkingRoute(mod);
+                            const isCheckout = String(mod.key || "").toLowerCase() === "checkout";
+                            const isSingleModuleCategory = group.items.length === 1;
+
+                            return (
+                              <Box
+                                key={mod.key}
+                                sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: isSingleModuleCategory ? "100%" : "calc(50% - 12px)" } }}
+                              >
+                                <ModuleCard
+                                  module={mod}
+                                  language={language}
+                                  categoryLabel={getCategoryLabel(group.category, language)}
+                                  primaryAction={workingRoute ? {
+                                    label: mod.buttons?.[language] || mod.buttons?.en || t.openModule,
+                                    href: workingRoute,
+                                  } : undefined}
+                                  secondaryAction={isCheckout && canViewCheckoutPayments ? {
+                                    label: t.paymentDashboard,
+                                    href: "/cms/modules/checkout/payments",
+                                  } : undefined}
+                                />
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      </Box>
+                      );
+                    })}
+                  </Stack>
+                </Box>
               </Box>
             )}
           </Box>

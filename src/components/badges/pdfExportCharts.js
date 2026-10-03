@@ -3,6 +3,7 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 import { REPORT_COLORS } from "@/styles/theme";
+import { getFontFilePath } from "@/utils/fontRegistry";
 
 const getTimezoneLabel = (timezone) => {
   try {
@@ -95,11 +96,11 @@ const fetchImageAsPngBytes = (url) =>
 // Load Cairo fonts for Arabic support
 const loadCairoFonts = async (pdf) => {
   try {
-    const regularResponse = await fetch("/fonts/cairo/Cairo-Regular.ttf");
+    const regularResponse = await fetch(getFontFilePath("Cairo", 400));
     const regularBytes = await regularResponse.arrayBuffer();
     const font = await pdf.embedFont(regularBytes);
 
-    const boldResponse = await fetch("/fonts/cairo/Cairo-Bold.ttf");
+    const boldResponse = await fetch(getFontFilePath("Cairo", 700));
     const boldBytes = await boldResponse.arrayBuffer();
     const bold = await pdf.embedFont(boldBytes);
 

@@ -2,7 +2,11 @@ import { createTheme } from "@mui/material/styles";
 
 export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
-  const primaryMain = isDark ? "#2DD4BF" : "#0F766E";
+  // EventPass blue is the single CMS primary in both modes, matched to
+  // Facebook's official brand/verified-badge blue (#1877F2). Dark mode uses a
+  // lighter tint of the same hue so interactive text and controls remain
+  // accessible against a dark background.
+  const primaryMain = isDark ? "#5DA0F6" : "#1877F2";
   const secondaryMain = isDark ? "#FFE14D" : "#F5C518";
 
   const successMain = "#2e7d32";
@@ -15,10 +19,19 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       mode,
       primary: {
         main: primaryMain,
-        // dark-mode primary is a light mint tint (for contrast against the
+        light: isDark ? "#7DB3F8" : "#3B8BF4",
+        dark: isDark ? "#1877F2" : "#166FE5",
+        // dark-mode primary is a light blue tint (for contrast against the
         // dark background), so it needs dark text; light-mode primary stays
         // dark enough for white text.
         contrastText: isDark ? "#0f1417" : "#ffffff",
+      },
+      eventpass: {
+        primary: primaryMain,
+        hover: isDark ? "#7DB3F8" : "#166FE5",
+        surface: isDark ? "rgba(93,160,246,0.14)" : "#EFF6FF",
+        surfaceHover: isDark ? "rgba(93,160,246,0.22)" : "#DBEAFE",
+        onPrimary: isDark ? "#0F172A" : "#FFFFFF",
       },
       common: {
         white: "#ffffff",
@@ -810,12 +823,10 @@ export const getTheme = (mode = "light", direction = "ltr") => {
 
       home: {
         heroGradient:
-          "linear-gradient(135deg, #1b3a7a 0%, #3843b2 45%, #6a2ea0 100%)",
-        heroShadow: "0 18px 40px rgba(27,58,122,0.25)",
-        heroOverlayBefore:
-          "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 45%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.14), transparent 40%)",
-        heroOverlayAfter:
-          "radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%)",
+          `radial-gradient(120% 140% at 100% 100%, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 60%), ${isDark ? "linear-gradient(135deg, #0a1a33 0%, #0b2a52 55%, #0d3a72 100%)" : "linear-gradient(135deg, #0a1226 0%, #0b1d40 55%, #0d2a5c 100%)"}`,
+        heroShadow: "0 18px 40px rgba(15, 54, 120, 0.35)",
+        heroOverlayBefore: "transparent",
+        heroOverlayAfter: "transparent",
         heroTextShadow: "0 2px 12px rgba(0,0,0,0.28)",
         heroTextSecondary: "rgba(255,255,255,0.9)",
         heroTextTertiary: "rgba(255,255,255,0.85)",
@@ -846,7 +857,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         moduleChipIconColor: isDark ? "#d4d4d8" : "#52525b",
       },
       navbar: {
-        appBarBg: isDark ? "rgba(26,34,38,0.6)" : "rgba(255,255,255,0.3)",
+        appBarBg: isDark ? "#101827" : "#ffffff",
         avatarButtonHoverShadow: isDark
           ? "3px 3px 8px rgba(0,0,0,0.6), -3px -3px 8px rgba(255,255,255,0.1), inset 2px 2px 5px rgba(0,0,0,0.3), inset -2px -2px 5px rgba(255,255,255,0.1)"
           : "3px 3px 8px rgba(0,0,0,0.2), -3px -3px 8px rgba(255,255,255,0.6), inset 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(255,255,255,0.7)",
@@ -1049,6 +1060,21 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         },
         variants: [
           {
+            props: { variant: "module" },
+            style: {
+              height: "100%",
+              width: "100%",
+              padding: 0,
+              overflow: "hidden",
+              borderRadius: "14px",
+              position: "relative",
+              isolation: "isolate",
+              containerType: "inline-size",
+              containerName: "module-card",
+              transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
+            },
+          },
+          {
             props: { variant: "frosted" },
             style: ({ theme }) => ({
               p: { xs: 3, sm: 4 },
@@ -1146,11 +1172,11 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             },
 
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#5eead4" : "#0b5c56",
+              borderColor: theme.palette.primary.main,
             },
 
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#5eead4" : "#0b5c56",
+              borderColor: theme.palette.primary.main,
             },
           }),
         },

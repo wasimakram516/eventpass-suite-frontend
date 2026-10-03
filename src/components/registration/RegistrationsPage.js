@@ -237,7 +237,7 @@ const translations = {
     whatsappNotSent: "لم يتم إرسال واتساب",
     inviteSent: "تم إرسال الدعوة",
     inviteNotSent: "لم تُرسل الدعوة",
-    exportbadges: "تصدير الشارات",
+    exportBadges: "تصدير الشارات",
     printBadge: "طباعة الشارة",
     editRegistration: "تعديل التسجيل",
     createRegistration: "جديد",
@@ -384,6 +384,7 @@ export function RegistrationsPage({
   const paymentEnabled = showPaymentFeatures && eventDetails?.isPaid;
   const breadcrumbs = moduleKey === "checkout"
     ? [
+      { label: language === "ar" ? "الوحدات" : "Modules", href: "/cms/modules" },
       { label: language === "ar" ? "الدفع" : "Checkout", href: routeBase },
       { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}/registrations` },
       { label: t.registrations },

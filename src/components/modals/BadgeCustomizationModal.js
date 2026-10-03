@@ -28,6 +28,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { getSelectableFonts } from "@/utils/fontRegistry";
 import {
     BADGE_SIZE_PRESETS,
     UNIT_OPTIONS,
@@ -335,11 +336,9 @@ const BadgeRichTextEditor = ({
         }
     }, []);
 
-    const fontsToUse = availableFonts && availableFonts.length > 0 ? availableFonts : [
-        { name: "Arial", family: "Arial" },
-        { name: "Futura", family: "Futura" },
-        { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" },
-    ];
+    const fontsToUse = availableFonts && availableFonts.length > 0
+        ? availableFonts
+        : getSelectableFonts();
 
     // Matches the toolbar's own 32px font-size dropdown so every control in
     // this row reads as the same height. Only padding/font-size are
@@ -1197,7 +1196,7 @@ export default function BadgeCustomizationModal({
                                             sx={{
                                                 fontSize: `${((customizations._qrCode.size ?? 70) / 70) * 9}px`,
                                                 fontWeight: "bold",
-                                                color: (theme) => theme.palette.primary.main,
+                                                color: "#000000",
                                                 letterSpacing: 0.7,
                                                 marginTop: "2px",
                                                 width: "max-content",

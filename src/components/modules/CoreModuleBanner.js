@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Chip, Stack, Box, Typography, Button } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { useRouter } from "next/navigation";
@@ -9,29 +8,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import { resolveModuleColor } from "@/styles/theme";
 import { ATTENDEE_DATA_CONSUMER_KEYS, getCategoryLabel } from "@/utils/moduleCategories";
 import AppCard from "@/components/cards/AppCard";
-
-// Radius (px) of the semicircular notches cut into the top and bottom edges of
-// the card, centered on the dotted divider (which sits at 65% of the width).
-const NOTCH_R = 9;
-
-// True cutouts, like a boarding pass: a mask of two half-height layers, each
-// with a transparent semicircle centered on the card edge, so the page shows
-// through the notch. (Painting page-colored discs on top instead reads as full
-// circles that hang outside the card.)
-const NOTCH_MASK = [
-  `radial-gradient(circle ${NOTCH_R}px at 65% 0, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) top / 100% 51% no-repeat`,
-  `radial-gradient(circle ${NOTCH_R}px at 65% 100%, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) bottom / 100% 51% no-repeat`,
-].join(", ");
-
-// Mobile version of the notches: the layout is stacked, so the dotted divider
-// is horizontal and the notches are cut into the LEFT and RIGHT edges at the
-// divider's height. That height depends on how the text wraps, so it is
-// measured at runtime and passed in. Two half-width layers, one per side.
-const mobileNotchMask = (y) =>
-  [
-    `radial-gradient(circle ${NOTCH_R}px at 0 ${y}px, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) left / 51% 100% no-repeat`,
-    `radial-gradient(circle ${NOTCH_R}px at 100% ${y}px, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) right / 51% 100% no-repeat`,
-  ].join(", ");
+import { TICKET_NOTCH_MASK, mobileTicketNotchMask, useMobileTicketNotch } from "@/utils/ticketNotch";
 
 // The default banner is a deliberate dark "hero" card in BOTH light and dark
 // mode (per the approved mockup), so its colors are fixed rather than derived
@@ -81,30 +58,7 @@ export default function CoreModuleBanner({
   // Where the mobile dotted divider sits, measured from the card's top edge, so
   // the notch cutouts can line up with it. Null on desktop, where the divider is
   // hidden and the top/bottom notches are used instead.
-  const gridRef = useRef(null);
-  const dividerRef = useRef(null);
-  const [mobileNotchY, setMobileNotchY] = useState(null);
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    const divider = dividerRef.current;
-    if (!grid || !divider) return undefined;
-
-    const measure = () => {
-      // offsetParent is null while the divider is display:none (md and up).
-      if (divider.offsetParent === null) {
-        setMobileNotchY(null);
-        return;
-      }
-      // +1 for the card's 1px border, since the mask is measured from its border box.
-      setMobileNotchY(divider.offsetTop + divider.offsetHeight / 2 + 1);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, [variant, language]);
+  const { gridRef, dividerRef, mobileNotchY } = useMobileTicketNotch([variant, language]);
 
   const handleClick = () => {
     if (onClick) onClick();
@@ -269,8 +223,8 @@ export default function CoreModuleBanner({
           boxShadow: "none",
           // Where the mask is transparent the card is cut away: top and bottom
           // notches from md up, side notches on the horizontal divider below.
-          WebkitMask: { xs: mobileNotchY == null ? "none" : mobileNotchMask(mobileNotchY), md: NOTCH_MASK },
-          mask: { xs: mobileNotchY == null ? "none" : mobileNotchMask(mobileNotchY), md: NOTCH_MASK },
+          WebkitMask: { xs: mobileNotchY == null ? "none" : mobileTicketNotchMask(mobileNotchY), md: TICKET_NOTCH_MASK },
+          mask: { xs: mobileNotchY == null ? "none" : mobileTicketNotchMask(mobileNotchY), md: TICKET_NOTCH_MASK },
           "&:hover": { transform: "none", boxShadow: "none" },
         }}
       >
@@ -317,12 +271,12 @@ export default function CoreModuleBanner({
 
           {/* Left column: icon + identity copy */}
           <Stack sx={{ p: { xs: 3, md: 5 }, height: "100%", justifyContent: { md: "center" } }} spacing={2}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
               <Box
                 sx={{
-                  width: { xs: 64, md: 88 },
-                  height: { xs: 64, md: 88 },
-                  borderRadius: 3,
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
                   background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
                   color: BANNER.text,
                   boxShadow: "0 8px 20px -6px rgba(59, 130, 246, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.18)",
@@ -332,7 +286,7 @@ export default function CoreModuleBanner({
                   flexShrink: 0,
                 }}
               >
-                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: { xs: 34, md: 48 }, color: BANNER.text } })}
+                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: 30, color: BANNER.text } })}
               </Box>
               <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Box
