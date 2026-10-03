@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import { capitalize } from "@/utils/stringUtil";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getModuleWorkingRoute } from "@/utils/moduleWorkingRoutes";
 
 const segmentMap = {
   dashboard: {
@@ -315,6 +316,13 @@ export default function BreadcrumbsNav({ items }) {
   const segments = pathname.split("/").filter((seg) => seg && seg !== filterSeg && seg !== "");
 
   const paths = segments.map((seg, i) => {
+    const moduleWorkingRoute = getModuleWorkingRoute({ key: seg });
+    if (moduleWorkingRoute) {
+      return {
+        segment: seg,
+        href: moduleWorkingRoute,
+      };
+    }
     if (isStaffPath && i === 0 && segments.length > 1 && segments[1] === "verify") {
       return {
         segment: seg,

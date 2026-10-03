@@ -1196,7 +1196,7 @@ export default function BadgeCustomizationModal({
                                             sx={{
                                                 fontSize: `${((customizations._qrCode.size ?? 70) / 70) * 9}px`,
                                                 fontWeight: "bold",
-                                                color: (theme) => theme.palette.primary.main,
+                                                color: "#000000",
                                                 letterSpacing: 0.7,
                                                 marginTop: "2px",
                                                 width: "max-content",

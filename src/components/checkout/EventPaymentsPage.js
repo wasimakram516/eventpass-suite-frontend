@@ -115,7 +115,7 @@ export function PaymentsPage({
   eventBase = "/cms/modules/checkout/events",
 }) {
   const { eventSlug } = useParams();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const {
     getPaymentsByEvent: fetchPaymentsByEvent,
     getPaymentStats: fetchPaymentStats,
@@ -199,6 +199,7 @@ export function PaymentsPage({
   }, [latestPayments, clearLatestPayments, event?._id, eventSlug, statusFilter, fetchPaymentStats]);
 
   const breadcrumbs = [
+    { label: language === "ar" ? "الوحدات" : "Modules", href: "/cms/modules" },
     { label: moduleLabel || t.moduleLabel, href: eventBase },
     { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },

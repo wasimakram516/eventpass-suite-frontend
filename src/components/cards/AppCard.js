@@ -4,10 +4,11 @@ import React from "react";
 import { Box, Paper } from "@mui/material";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 
-const AppCard = ({ children, sx, ...props }) => {
+const AppCard = ({ children, sx, variant = "default", ...props }) => {
   return (
     <Paper
       elevation={0}
+      variant={variant === "default" || variant === "static" ? undefined : variant}
       sx={[
         (theme) => ({
           borderRadius: 4,
@@ -18,10 +19,14 @@ const AppCard = ({ children, sx, ...props }) => {
           display: "flex",
           flexDirection: "column",
           ...wrapTextBox,
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: theme.palette.shadow.card,
-          },
+          ...(variant === "static"
+            ? {}
+            : {
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: theme.palette.shadow.card,
+                },
+              }),
         }),
         ...(Array.isArray(sx) ? sx.filter(Boolean) : sx ? [sx] : []),
       ]}

@@ -34,13 +34,15 @@ import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ModuleWorkingHeader from "@/components/modules/ModuleWorkingHeader";
 import AuditSearchClearButton from "@/components/AuditSearchClearButton";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
+import BusinessScope from "@/components/business/BusinessScope";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
+import useBusinessAutoSelection from "@/hooks/useBusinessAutoSelection";
 import LoadingState from "@/components/LoadingState";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -151,6 +153,7 @@ const Dashboard = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
+  useBusinessAutoSelection(user, selectedBusiness, setSelectedBusiness);
   const { t, dir, language } = useI18nLayout(translations);
   const canCreate = useHasPermission("eventwheel", "create");
   const canEdit = useHasPermission("eventwheel", "edit");
@@ -277,29 +280,14 @@ const Dashboard = () => {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business" && !selectedBusiness) {
-        const userBusiness = businessList.find(
-          (business) =>
-            business.slug === user.business?.slug ||
-            business._id === user.business?._id
-        );
-        if (userBusiness) {
-          setSelectedBusiness(userBusiness.slug);
-          fetchSpinWheels(userBusiness.slug);
-        }
-      } else if (selectedBusiness) {
+      if (selectedBusiness) {
         fetchSpinWheels(selectedBusiness);
       }
       setLoading(false);
     };
 
     initializeBusinesses();
-  },[user?.id,
-  user?.role,
-  user?.business?.slug,
-  user?.business?._id,
-  selectedBusiness
-]);
+  }, [selectedBusiness]);
 
   const fetchSpinWheels = useCallback(
     async (businessSlug = "") => {
@@ -709,45 +697,13 @@ const Dashboard = () => {
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            rowGap: 2,
-            mt: 2,
-          }}
-        >
-          <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
-            <Typography variant="h4" sx={{
-              fontWeight: "bold"
-            }}>
-              {t.spinWheelManagement}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                mt: 0.5
-              }}>
-              {selectedBusinessObject
-                ? `${t.managingWheelsFor} ${selectedBusinessObject.name}`
-                : t.selectBusinessToView}
-            </Typography>
-          </Box>
-
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            sx={{
-              flexShrink: 0,
-              alignItems: "stretch",
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
+        <ModuleWorkingHeader
+          title={t.spinWheelManagement}
+          description={selectedBusinessObject ? `${t.managingWheelsFor} ${selectedBusinessObject.name}` : t.selectBusinessToView}
+          actions={(
+            <>
             <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
-            {(user?.role === "admin" || user?.role === "superadmin") && (
+            {selectedBusiness && (user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
@@ -767,14 +723,14 @@ const Dashboard = () => {
                 {t.createSpinWheel}
               </Button>
             )}
-          </Stack>
-        </Box>
+            </>
+          )}
+        />
 
         <Divider sx={{ my: 2 }} />
 
-        {!selectedBusiness ? (
-          <EmptyBusinessState />
-        ) : loading ? (
+        <BusinessScope user={user} selectedBusiness={selectedBusiness} businesses={businesses} onSelect={handleBusinessSelect}>
+        {loading ? (
           <Box
             sx={{
               display: "flex",
@@ -950,6 +906,7 @@ const Dashboard = () => {
             })}
           </Box>
         )}
+        </BusinessScope>
 
         <ShareLinkModal
           open={openShareModal}

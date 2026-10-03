@@ -32,6 +32,7 @@ import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import AuditSearchClearButton from "@/components/AuditSearchClearButton";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
+import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
@@ -885,6 +886,15 @@ export default function RecipientsManagePage() {
             </Typography>
           </Box>
 
+          {!selectedBusiness?._id && (user?.role === "admin" || user?.role === "superadmin") && (
+            <InlineBusinessPicker
+              businesses={businesses}
+              onSelect={(slug) => {
+                setSelectedBizSlug(slug);
+                setSelectedBusiness(slug);
+              }}
+            />
+          )}
           <AuditSearchClearButton />
 
           <Box
@@ -992,14 +1002,14 @@ export default function RecipientsManagePage() {
                     rowGap: 1,
                     "& > *": { flexShrink: 0 },
                   }}>
-                  <Button
+                  {selectedBusiness?._id && <Button
                     variant="outlined"
                     startIcon={<ICONS.business fontSize="small" />}
                     onClick={() => setBizDrawerOpen(true)}
                     sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
                   >
                     {t.selectBusiness}
-                  </Button>
+                  </Button>}
 
                   <FormControl size="small" sx={{ minWidth: 210 }} disabled={!selectedBusiness?._id}>
                     <InputLabel>{t.chooseEvent}</InputLabel>
@@ -1077,7 +1087,7 @@ export default function RecipientsManagePage() {
                     </Button>
                   )}
 
-                  <Button
+                  {selectedBusiness?._id && <Button
                     variant="outlined"
                     startIcon={<ICONS.filter fontSize="small" />}
                     disabled={!isWorkflowComplete}
@@ -1085,7 +1095,7 @@ export default function RecipientsManagePage() {
                     sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
                   >
                     {t.filtersActions}
-                  </Button>
+                  </Button>}
                 </Stack>
               </Box>
 
@@ -1167,14 +1177,14 @@ export default function RecipientsManagePage() {
                   rowGap: 1,
                   "& > *": { flexShrink: 0 },
                 }}>
-                  <Button
+                  {selectedBusiness?._id && <Button
                     variant="outlined"
                     startIcon={<ICONS.business fontSize="small" />}
                     onClick={() => setBizDrawerOpen(true)}
                     sx={getStartIconSpacing(dir)}
                   >
                     {t.selectBusiness}
-                  </Button>
+                  </Button>}
 
                   <FormControl size="small" sx={{ minWidth: 220 }} disabled={!selectedBusiness?._id}>
                     <InputLabel>{t.chooseEvent}</InputLabel>

@@ -14,7 +14,6 @@ import {
   CircularProgress,
   Tooltip,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
   Accordion,
@@ -39,18 +38,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useTheme, alpha } from "@mui/material/styles";
 import {
   getDashboardInsights,
   refreshDashboardInsights,
 } from "@/services/dashboardService";
 import LoadingState from "@/components/LoadingState";
-import { wrapTextBox } from "@/utils/wrapTextStyles";
-import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
-import { resolveModuleColor } from "@/styles/theme";
+import { TICKET_GRID_COLUMNS } from "@/utils/ticketNotch";
+import WelcomeScene from "@/components/dashboard/WelcomeScene";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -59,7 +58,10 @@ import useDashboardSocket from "@/hooks/useDashboardSocket";
 import { useModules, useModuleCategories } from "@/hooks/useModules";
 import { groupByModuleCategory, getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
 import AppCard from "@/components/cards/AppCard";
-import { PieChart } from "@mui/x-charts";
+import ModuleCard from "@/components/modules/ModuleCard";
+import { getModuleWorkingRoute } from "@/utils/moduleWorkingRoutes";
+import DonutStat from "../../components/chart/DonutStat";
+import { buildDonutData } from "@/utils/charts";
 
 const translations = {
   en: {
@@ -96,6 +98,7 @@ const translations = {
     allCategories: "All categories",
     coreModule: "Core Module",
     openModule: "Open",
+    paymentDashboard: "Payment Dashboard",
     noPermission: "You currently do not have access to any modules.",
     contactSupport: "Please contact support to request access:",
   },
@@ -133,6 +136,7 @@ const translations = {
     allCategories: "كل الفئات",
     coreModule: "الوحدة الأساسية",
     openModule: "فتح",
+    paymentDashboard: "لوحة المدفوعات",
     noPermission: "ليس لديك إذن للوصول إلى أي وحدات حالياً.",
     contactSupport: "يرجى الاتصال بالدعم لطلب الوصول:",
   },
@@ -151,32 +155,32 @@ function getCategoryIconComponent(categoryId) {
   return CATEGORY_ICON_MAP[meta?.iconName] || CategoryOutlinedIcon;
 }
 
-const buildDonutData = (data = [], emptyLabel = "Empty", donutColors = [], donutEmpty = "#e0e0e0") => {
-  const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
-  if (total === 0) {
-    return {
-      data: [
-        {
-          id: 0,
-          label: emptyLabel,
-          value: 1,
-          color: donutEmpty,
-          isEmpty: true,
-        },
-      ],
-      total: 0,
-    };
-  }
-  return {
-    data: data.map((item, idx) => ({
-      id: idx,
-      label: item.name,
-      ...item,
-      color: donutColors.length ? donutColors[idx % donutColors.length] : undefined,
-    })),
-    total,
-  };
-};
+// export const buildDonutData = (data = [], emptyLabel = "Empty", donutColors = [], donutEmpty = "#e0e0e0") => {
+//   const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+//   if (total === 0) {
+//     return {
+//       data: [
+//         {
+//           id: 0,
+//           label: emptyLabel,
+//           value: 1,
+//           color: donutEmpty,
+//           isEmpty: true,
+//         },
+//       ],
+//       total: 0,
+//     };
+//   }
+//   return {
+//     data: data.map((item, idx) => ({
+//       id: idx,
+//       label: item.name,
+//       ...item,
+//       color: donutColors.length ? donutColors[idx % donutColors.length] : undefined,
+//     })),
+//     total,
+//   };
+// };
 
 const Clock = React.memo(function Clock({ language, align, color }) {
   const [now, setNow] = useState(new Date());
@@ -213,269 +217,177 @@ const Clock = React.memo(function Clock({ language, align, color }) {
   );
 });
 
-const DonutStat = React.memo(function DonutStat({ data, centerLabel, height = 180, animateCharts = false }) {
-  const isEmpty = data.length === 1 && data[0]?.isEmpty;
+// Same card language as ModuleCard.js: a 12px start-border accent and a
+// hover glow tied to the top-right corner (fixed, not cursor-tracked), same
+// as uat's CategoryCard/ModuleCard.
+const dashboardStatCardSx = {
+  p: 2.5,
+  height: "100%",
+  width: "100%",
+  textAlign: "center",
+  overflow: "hidden",
+  position: "relative",
+  // No borderRadius override: inherit AppCard's own default so these corners
+  // match ModuleCard.js's exactly, rather than an approximated "14px".
+  border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+  borderInlineStart: (theme) => `12px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+  boxShadow: (theme) => `0 1px 2px ${alpha(theme.palette.common.black, 0.04)}, 0 6px 16px ${alpha(theme.palette.primary.main, 0.06)}`,
+  transition: "border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    zIndex: 0,
+    pointerEvents: "none",
+    background: (theme) =>
+      `radial-gradient(ellipse 100% 100% at 100% 0%, ${alpha(theme.palette.primary.main, 0.18)} 0%, ${alpha(theme.palette.primary.main, 0.07)} 40%, transparent 72%)`,
+    opacity: 0,
+    transition: "opacity 0.25s ease",
+  },
+  "& > *": { position: "relative", zIndex: 1 },
+  "&:hover": {
+    borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+    transform: "translateY(-2px)",
+    boxShadow: (theme) => `0 10px 24px ${alpha(theme.palette.primary.main, 0.12)}`,
+  },
+  "&:hover::before": { opacity: 1 },
+};
+
+
+const DashboardStatPreview = React.memo(function DashboardStatPreview({
+  data,
+  total,
+  language,
+  animateCharts,
+  legend = [],
+  action,
+}) {
+  const theme = useTheme();
+  const primary = theme.palette.primary.main;
+  const visibleLegend = legend.filter((item) => !item.isEmpty).slice(0, 5);
+  const hiddenLegend = legend.filter((item) => !item.isEmpty).slice(5);
+  const hasLegend = visibleLegend.length > 0;
+
   return (
     <Box
       sx={{
-        position: "relative",
-        width: "100%",
-        height,
-        minWidth: 180,
+        mt: 1.5,
+        p: 1.5,
+        borderRadius: "12px",
+        bgcolor: alpha(primary, 0.04),
+        border: `1px solid ${alpha(primary, 0.1)}`,
+        display: "grid",
+        alignItems: "center",
+        gridTemplateColumns: hasLegend ? "112px minmax(0, 1fr)" : "1fr",
+        columnGap: hasLegend ? 1.5 : 0,
+        // Grows to fill whatever height its AppCard sibling has (the Grid
+        // stretches all three stat cards to the tallest one), so all three
+        // inner boxes end up the same height instead of the shortest one
+        // leaving blank space below it.
+        flexGrow: 1,
       }}
     >
-      <PieChart
-        height={height}
-        skipAnimation={!animateCharts}
-        series={[
-          {
-            data,
-            innerRadius: 50,
-            outerRadius: 70,
-            paddingAngle: 2,
-            arcLabel: () => "",
-          },
-        ]}
-        slotProps={{
-          legend: { hidden: true, sx: { display: "none !important" } },
-          tooltip: { trigger: isEmpty ? "none" : "item" },
-        }}
-      />
-      <Typography
-        variant="h6"
-        sx={{
-          fontWeight: "bold",
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          whiteSpace: "nowrap",
-        }}>
-        {centerLabel}
-      </Typography>
+      <Box sx={{ display: "grid", placeItems: "center" }}>
+        <DonutStat
+          data={data}
+          width={hasLegend ? 112 : 152}
+          height={hasLegend ? 112 : 152}
+          minWidth={0}
+          innerRadius={hasLegend ? 34 : 44}
+          outerRadius={hasLegend ? 48 : 64}
+          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+          centerLabel={toArabicDigits(total, language)}
+          centerLabelSx={{ fontSize: "1.2rem", fontVariantNumeric: "tabular-nums" }}
+          animateCharts={animateCharts}
+        />
+      </Box>
+
+      {hasLegend && (
+        <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+          {visibleLegend.map((item) => {
+            const share = total ? Number(item.value || 0) / total : 0;
+            return (
+              <Box key={item.name} sx={{ minWidth: 0, px: 1, py: 0.5, mx: -1, borderRadius: 1.5 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color || primary, flexShrink: 0 }} />
+                  <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                    {item.name}
+                  </Typography>
+                  <Typography variant="caption" fontWeight={700} sx={{ fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                    {toArabicDigits(item.value, language)}
+                  </Typography>
+                </Stack>
+                <Box sx={{ mt: 0.5, marginInlineStart: 2, height: 3, borderRadius: 2, bgcolor: alpha(primary, 0.1), overflow: "hidden" }}>
+                  <Box sx={{ width: `${share * 100}%`, minWidth: share > 0 ? 4 : 0, height: "100%", bgcolor: item.color || primary, borderRadius: 2 }} />
+                </Box>
+              </Box>
+            );
+          })}
+          {hiddenLegend.length > 0 && (
+            <Tooltip
+              arrow
+              title={hiddenLegend.map((item) => `${item.name}: ${toArabicDigits(item.value, language)}`).join("\n")}
+            >
+              <Typography variant="caption" fontWeight={700} sx={{ color: "primary.main", width: "fit-content" }}>
+                +{toArabicDigits(hiddenLegend.length, language)}
+              </Typography>
+            </Tooltip>
+          )}
+        </Stack>
+      )}
+
+      {action && (
+        <Box sx={{ gridColumn: "1 / -1", mt: 0.5, textAlign: "center" }}>
+          {action}
+        </Box>
+      )}
     </Box>
   );
 });
 
-const RenderTruncatedChip = React.memo(function RenderTruncatedChip({ label }) {
-  return (
-    <Tooltip title={label}>
-      <Chip
-        label={label}
-        size="small"
-        variant="outlined"
-        sx={{
-          maxWidth: 140,
-          "& .MuiChip-label": {
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          },
-        }}
-      />
-    </Tooltip>
-  );
-});
-
-const DashboardModuleCard = React.memo(function DashboardModuleCard({
-  mod,
-  stats,
-  language,
-  t,
-  themeMode,
-  donutColors,
-  donutEmpty,
-  animateCharts,
-  dir,
-  onOpenModule,
-}) {
-  const totals = stats?.totals || {};
-  const trash = stats?.trash || {};
-  const totalEntries = Object.entries(totals);
-  const trashEntries = Object.entries(trash);
-  const totalsDonutInput = totalEntries.map(([k, v]) => ({
-    name: k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
-    value: Number(v || 0),
-  }));
-  const { data: donutData, total: donutTotal } = buildDonutData(
-    totalsDonutInput,
-    t.noTotals,
-    donutColors,
-    donutEmpty,
-  );
-  const modColor =
-    resolveModuleColor(mod.color, themeMode) ||
-    "#1976d2";
-  const categoryLabel = getCategoryLabel(mod.category, language);
-
-  return (
-    <AppCard
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        width: { xs: "100%", sm: 350 },
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        ...wrapTextBox,
-      }}
-    >
-      <Box sx={{ ...wrapTextBox }}>
-        {/* Header row: Icon + Title + Category Chip */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 1,
-            mb: 1,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-            {getModuleIcon(mod.icon, {
-              sx: { fontSize: 36, color: modColor, flexShrink: 0 },
-            })}
-            <Typography
-              variant="h6"
-              sx={{
-                color: modColor,
-                fontWeight: "bold",
-                ...wrapTextBox,
-              }}
-            >
-              {mod.labels?.[language] ||
-                mod.labels?.en ||
-                mod.key}
-            </Typography>
-          </Box>
-          {categoryLabel && (
-            <Chip
-              size="small"
-              label={categoryLabel}
-              variant="outlined"
-              sx={{ fontSize: "0.75rem", height: 24 }}
-            />
-          )}
-        </Box>
-
-        <Typography
-          variant="body2"
-          gutterBottom
-          sx={{
-            color: "text.secondary",
-            ...wrapTextBox,
-            minHeight: 44,
-          }}
-        >
-          {mod.descriptions?.[language] || mod.descriptions?.en}
-        </Typography>
-        <Box sx={{ mt: 2 }}>
-          <DonutStat
-            data={donutData}
-            centerLabel={toArabicDigits(donutTotal, language)}
-            height={160}
-            animateCharts={animateCharts}
-          />
-        </Box>
-      </Box>
-      <Box>
-        <Divider sx={{ my: 2 }} />
-
-        {/* Totals */}
-        {totalEntries.length > 0 ? (
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              flexWrap: "wrap",
-              gap: 0.5,
-            }}
-          >
-            {totalEntries.map(([k, v]) => (
-              <RenderTruncatedChip
-                key={k}
-                label={toArabicDigits(
-                  `${k
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (c) => c.toUpperCase())}: ${v}`,
-                  language,
-                )}
-              />
-            ))}
-          </Stack>
-        ) : (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-            }}
-          >
-            {t.noTotals}
-          </Typography>
-        )}
-
-        {/* Trash */}
-        {trashEntries.length > 0 && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            {/* Trash title row */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1,
-                mb: 1,
-              }}
-            >
-              <ICONS.delete fontSize="small" color="error" />
-              <Typography variant="subtitle2" gutterBottom>
-                {t.trash}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 1,
-                justifyContent: "flex-start",
-              }}
-            >
-              {trashEntries.map(([k, v]) => (
-                <RenderTruncatedChip
-                  key={k}
-                  label={toArabicDigits(
-                    `${k
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (c) => c.toUpperCase())}: ${v}`,
-                    language,
-                  )}
-                />
-              ))}
-            </Box>
-          </>
-        )}
-
-        {/* Open Action */}
-        {mod.route && (
-          <Button
-            size="small"
-            onClick={() => onOpenModule(mod.route)}
-            sx={{
-              textTransform: "none",
-              mt: 2,
-              fontWeight: 600,
-              alignSelf: "flex-start",
-              ...getStartIconSpacing(dir),
-            }}
-            endIcon={<ArrowForwardOutlinedIcon fontSize="small" />}
-          >
-            {mod.buttons?.[language] || mod.buttons?.en || t.openModule}
-          </Button>
-        )}
-      </Box>
-    </AppCard>
-  );
-});
+// export const DonutStat = React.memo(function DonutStat({ data, centerLabel, height = 180, animateCharts = false }) {
+//   const isEmpty = data.length === 1 && data[0]?.isEmpty;
+//   return (
+//     <Box
+//       sx={{
+//         position: "relative",
+//         width: "100%",
+//         height,
+//         minWidth: 180,
+//       }}
+//     >
+//       <PieChart
+//         height={height}
+//         skipAnimation={!animateCharts}
+//         series={[
+//           {
+//             data,
+//             innerRadius: 50,
+//             outerRadius: 70,
+//             paddingAngle: 2,
+//             arcLabel: () => "",
+//           },
+//         ]}
+//         slotProps={{
+//           legend: { hidden: true, sx: { display: "none !important" } },
+//           tooltip: { trigger: isEmpty ? "none" : "item" },
+//         }}
+//       />
+//       <Typography
+//         variant="h6"
+//         sx={{
+//           fontWeight: "bold",
+//           position: "absolute",
+//           top: "50%",
+//           left: "50%",
+//           transform: "translate(-50%, -50%)",
+//           whiteSpace: "nowrap",
+//         }}>
+//         {centerLabel}
+//       </Typography>
+//     </Box>
+//   );
+// });
 
 export default function HomePage() {
   const { user, setSelectedBusiness } = useAuth();
@@ -504,6 +416,24 @@ export default function HomePage() {
     modules,
     groupByModuleCategory,
   );
+
+  // Default the category filter to Event Operations once the categories load,
+  // rather than starting on "All categories". Only applies once, via the ref
+  // guard, so it never overrides a later explicit click back to All categories.
+  const appliedDefaultCategoryRef = useRef(false);
+  useEffect(() => {
+    if (appliedDefaultCategoryRef.current) return;
+    if (!groupedByCategory.length) return;
+    const eventOps = groupedByCategory.find(
+      (group) => (group.category?.labels?.en || "").trim().toLowerCase() === "event operations",
+    );
+    if (eventOps) {
+      appliedDefaultCategoryRef.current = true;
+      setSelectedCategoryId(eventOps.category.id);
+    }
+  }, [groupedByCategory]);
+
+  const canViewCheckoutPayments = useHasPermission("checkout", "view_payments");
 
   const coreModule = coreModules[0];
   const isCoreVisible =
@@ -622,9 +552,31 @@ export default function HomePage() {
     }
   };
 
-  const handleOpenModule = useCallback((route) => {
-    if (route) router.push(route);
-  }, [router]);
+      const renderModuleCard = (mod) => {
+    const key = String(mod.key || "");
+    const stats = moduleStats[key] ?? moduleStats[key.toLowerCase()] ?? {};
+
+    return (
+      <ModuleCard
+        key={mod.key}
+        module={mod}
+        language={language}
+        categoryLabel={getCategoryLabel(mod.category, language)}
+        stats={stats}
+        statsLabels={{ noTotals: t.noTotals, trash: t.trash }}
+        animateCharts={animateCharts}
+        primaryAction={getModuleWorkingRoute(mod) ? {
+          label: mod.buttons?.[language] || mod.buttons?.en || t.openModule,
+          href: getModuleWorkingRoute(mod),
+        } : undefined}
+        secondaryAction={key.toLowerCase() === "checkout" && canViewCheckoutPayments ? {
+          label: t.paymentDashboard,
+          href: "/cms/modules/checkout/payments",
+        } : undefined}
+        // stackActions={key.toLowerCase() === "checkout"}
+      />
+    );
+  };
 
   const { modules: moduleStats = {} } = insights || {};
   const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
@@ -663,6 +615,13 @@ export default function HomePage() {
       : hours < 18
         ? t.greetingAfternoon
         : t.greetingEvening;
+  // Same thresholds as the greeting text above, so the welcome header's
+  // animated sky always matches what the greeting says.
+  // Independent of the greeting text above (which stays Morning/Afternoon/
+  // Evening) — the scene gets a real fourth band for late night hours, since
+  // "Good Night" isn't a real greeting but the night sky is a real look.
+  const welcomeBand =
+    hours < 6 ? "night" : hours < 12 ? "morning" : hours < 17 ? "afternoon" : hours < 20 ? "evening" : "night";
 
   const donutColors = theme.palette.home.donutColors;
   const donutEmpty = theme.palette.home.donutEmpty;
@@ -685,73 +644,84 @@ export default function HomePage() {
         maxWidth={false}
         sx={{ px: { xs: 2, md: 3, lg: 4 } }}
       >
-        {/* Welcome Header */}
+        {/* Welcome Header — same height and prominent-name treatment as the
+            EventReg core module banner (CoreModuleBanner's default variant):
+            a cyan top edge and a small pill badge above the headline, a big
+            bold name. The background is an animated time-of-day sky
+            (WelcomeScene) — everything else about the card is unchanged. */}
         <AppCard
           sx={{
-            p: 4,
+            p: 0,
             mb: 4,
             borderRadius: 3,
             color: "common.white",
             position: "relative",
             overflow: "hidden",
-            background: theme.palette.home.heroGradient,
+            minHeight: { md: 250 },
+            background: "transparent",
             boxShadow: theme.palette.home.heroShadow,
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              background: theme.palette.home.heroOverlayBefore,
-              pointerEvents: "none",
-            },
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              right: -120,
-              top: -120,
-              width: 320,
-              height: 320,
-              borderRadius: "50%",
-              background: theme.palette.home.heroOverlayAfter,
-              pointerEvents: "none",
-            },
           }}
         >
+          <WelcomeScene band={welcomeBand} />
+          {/* Cyan top edge, matching the module banner's accent line */}
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: "linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, #38bdf8 50%, rgba(56, 189, 248, 0) 100%)",
+              opacity: 0.85,
+              zIndex: 1,
+            }}
+          />
           <Box
             sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 2,
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: TICKET_GRID_COLUMNS },
+              alignItems: "stretch",
               position: "relative",
               zIndex: 1,
+              minHeight: { md: 250 },
             }}
           >
             {/* Greeting / Info */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", p: { xs: 3, md: 5 }, pb: { xs: 2, md: 5 } }}>
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  alignSelf: "flex-start",
+                  alignItems: "center",
+                  px: 1.25,
+                  py: 0.35,
+                  borderRadius: "999px",
+                  gap: 0.75,
+                  bgcolor: "rgba(255, 255, 255, 0.08)",
+                  border: "1px solid rgba(255, 255, 255, 0.16)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  letterSpacing: 0.3,
+                  mb: 1.5,
+                }}
+              >
+                <Box aria-hidden sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#38bdf8" }} />
+                {greeting}
+              </Box>
               <Typography
-                variant="h5"
-                gutterBottom
+                variant="h4"
+                component="h1"
                 sx={{
                   textAlign: align,
                   color: "common.white",
-                  letterSpacing: "0.3px",
                   textShadow: theme.palette.home.heroTextShadow,
-                  fontWeight: 600,
-                  lineHeight: 1.15,
+                  fontWeight: 800,
+                  fontSize: { xs: "2.25rem", md: "3rem" },
+                  lineHeight: 1.1,
                 }}>
-                {greeting},{" "}
-                <Typography
-                  component="span"
-                  variant="h3"
-                  sx={{
-                    display: "inline-block",
-                    fontWeight: 800,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {user?.name || "Guest"}
-                </Typography>
+                {user?.name || "Guest"}
               </Typography>
               <Clock language={language} align={align} color={theme.palette.home.heroTextSecondary} />
               <Typography
@@ -764,15 +734,19 @@ export default function HomePage() {
                 {t.overviewIntro}
               </Typography>
             </Box>
+
             {/* Recompute button + last updated */}
             <Box
               dir={dir}
               sx={{
                 display: "flex",
                 flexDirection: "column",
+                justifyContent: "center",
                 alignItems: { xs: "flex-start", sm: "flex-end" },
                 gap: 0.5,
                 width: { xs: "100%", sm: "auto" },
+                p: { xs: 3, md: 5 },
+                pt: { xs: 2, md: 5 },
               }}
             >
               {connected ? (
@@ -864,7 +838,7 @@ export default function HomePage() {
           <>
             {/* Global Overview */}
             {moduleStats.global && (
-              <AppCard sx={{ p: 3, mt: 2, mb: 4, borderRadius: 3 }}>
+              <Box sx={{ mt: 2, mb: 4 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Avatar sx={{ bgcolor: "info.main", mx: 1 }}>
                     <ICONS.business />
@@ -893,13 +867,13 @@ export default function HomePage() {
                     donutEmpty,
                   );
 
-                  const businessesDonut = buildDonutData(
-                    [
-                      {
-                        name: t.businesses,
-                        value: moduleStats.global.totals?.businesses ?? 0,
-                      },
-                    ],
+                  const recentBusinesses = [...businessesInDrawerOrder]
+                    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                  const { data: businessesDonut, total: businessesTotal } = buildDonutData(
+                    recentBusinesses.map((business) => ({
+                      name: business.name || business.slug || t.unknownBusiness,
+                      value: 1,
+                    })),
                     t.noTotals,
                     donutColors,
                     donutEmpty,
@@ -911,7 +885,12 @@ export default function HomePage() {
                       value: Number(business.count || 0),
                     })),
                     t.noTotals,
+                    donutColors,
+                    donutEmpty,
                   );
+                  const eventLegend = [...eventsDonut]
+                    .filter((item) => !item.isEmpty)
+                    .sort((a, b) => Number(b.value || 0) - Number(a.value || 0));
 
                   return (
                     <Grid
@@ -927,38 +906,18 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.users}
                           </Typography>
-                          <DonutStat
+                          <DashboardStatPreview
                             data={usersDonut}
-                            centerLabel={toArabicDigits(usersTotal, language)}
-                            height={200}
+                            total={usersTotal}
+                            language={language}
                             animateCharts={animateCharts}
+                            legend={usersDonut}
                           />
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{
-                              flexWrap: "wrap",
-                              justifyContent: "center",
-                              mt: 1,
-                            }}>
-                            {roleKeys.map((role) => (
-                              <RenderTruncatedChip
-                                key={role}
-                                label={toArabicDigits(`${roleLabel(role)}: ${Number(userTotals?.[role] || 0)
-                                  }`, language)}
-                              />
-                            ))}
-                          </Stack>
                         </AppCard>
                       </Grid>
                       <Grid
@@ -967,21 +926,17 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.businesses}
                           </Typography>
-                          <DonutStat
-                            data={businessesDonut.data}
-                            centerLabel={toArabicDigits(businessesDonut.total, language)}
-                            height={200}
+                          <DashboardStatPreview
+                            data={businessesDonut}
+                            total={businessesTotal}
+                            language={language}
                             animateCharts={animateCharts}
+                            legend={businessesDonut}
                           />
                         </AppCard>
                       </Grid>
@@ -991,40 +946,37 @@ export default function HomePage() {
                           md: 4,
                         }}>
                         <AppCard
-                          sx={{
-                            p: 2,
-                            height: "100%",
-                            width: "100%",
-                            textAlign: "center",
-                          }}
+                          sx={dashboardStatCardSx}
                         >
-                          <Typography variant="subtitle1" gutterBottom>
+                          <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                             {t.totalEvents}
                           </Typography>
-                          <DonutStat
+                          <DashboardStatPreview
                             data={eventsDonut}
-                            centerLabel={toArabicDigits(eventsTotal, language)}
-                            height={200}
+                            total={eventsTotal}
+                            language={language}
                             animateCharts={animateCharts}
+                            legend={eventLegend}
+                            action={
+                              <Button
+                                variant="text"
+                                size="small"
+                                onClick={() => setShowEventDetails(true)}
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {t.viewDetails}
+                              </Button>
+                            }
                           />
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setShowEventDetails(true)}
-                            sx={{
-                              mt: 1,
-                              width: "50%",
-                              alignSelf: "center",
-                            }}
-                          >
-                            {t.viewDetails}
-                          </Button>
                         </AppCard>
                       </Grid>
                     </Grid>
                   );
                 })()}
-              </AppCard>
+              </Box>
             )}
 
             {/* Categorized Modules Section */}
@@ -1035,15 +987,9 @@ export default function HomePage() {
                 </Typography>
               </Box>
 
-              {/* Category Filter Chips */}
+              {/* Category Filter Chips — "All categories" last, so the
+                  default-selected category (Event Operations) reads first. */}
               <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", mb: 4, gap: 1 }}>
-                <Chip
-                  label={`${t.allCategories} (${totalModuleCount})`}
-                  clickable
-                  onClick={() => setSelectedCategoryId(null)}
-                  color={!selectedCategoryId ? "primary" : "default"}
-                  variant={!selectedCategoryId ? "filled" : "outlined"}
-                />
                 {groupedByCategory.map((group) => {
                   const isCoreInThisCategory =
                     coreModule && coreModule.category?.id === group.category.id;
@@ -1064,6 +1010,13 @@ export default function HomePage() {
                     />
                   );
                 })}
+                <Chip
+                  label={`${t.allCategories} (${totalModuleCount})`}
+                  clickable
+                  onClick={() => setSelectedCategoryId(null)}
+                  color={!selectedCategoryId ? "primary" : "default"}
+                  variant={!selectedCategoryId ? "filled" : "outlined"}
+                />
               </Stack>
 
               <Box>
@@ -1085,7 +1038,7 @@ export default function HomePage() {
                           sx={{
                             width: 42,
                             height: 42,
-                            borderRadius: 2,
+                            borderRadius: "50%",
                             bgcolor: alpha(theme.palette.primary.main, 0.08),
                             color: "primary.main",
                             display: "flex",
@@ -1102,27 +1055,13 @@ export default function HomePage() {
                       <Chip size="small" label="1" color="primary" variant="outlined" />
                     </Box>
                     <Divider sx={{ mb: 3 }} />
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 3,
-                        justifyContent: "center",
-                      }}
-                    >
-                      <DashboardModuleCard
+                    <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3 }}>
+                      <Box
                         key={coreModule.key}
-                        mod={coreModule}
-                        stats={moduleStats[coreModule.key]}
-                        language={language}
-                        t={t}
-                        themeMode={theme.palette.mode}
-                        donutColors={donutColors}
-                        donutEmpty={donutEmpty}
-                        animateCharts={animateCharts}
-                        dir={dir}
-                        onOpenModule={handleOpenModule}
-                      />
+                        sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: "calc(50% - 12px)" } }}
+                      >
+                        {renderModuleCard(coreModule)}
+                      </Box>
                     </Box>
                   </Box>
                 )}
@@ -1136,6 +1075,8 @@ export default function HomePage() {
                     coreModule &&
                     coreModule.category?.id === group.category.id &&
                     (!selectedCategoryId || selectedCategoryId === group.category.id);
+                  const categoryModuleCount = group.items.length + (isCoreInCategory ? 1 : 0);
+                  const isSingleModuleCategory = categoryModuleCount === 1;
 
                   return (
                     <Box key={group.category.id} sx={{ mb: 6 }}>
@@ -1154,7 +1095,7 @@ export default function HomePage() {
                             sx={{
                               width: 42,
                               height: 42,
-                              borderRadius: 2,
+                              borderRadius: "50%",
                               bgcolor: alpha(theme.palette.primary.main, 0.08),
                               color: "primary.main",
                               display: "flex",
@@ -1181,44 +1122,22 @@ export default function HomePage() {
                         />
                       </Box>
                       <Divider sx={{ mb: 3 }} />
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 3,
-                          justifyContent: "center",
-                        }}
-                      >
+                      <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 3 }}>
                         {isCoreInCategory && (
-                          <DashboardModuleCard
+                          <Box
                             key={coreModule.key}
-                            mod={coreModule}
-                            stats={moduleStats[coreModule.key]}
-                            language={language}
-                            t={t}
-                            themeMode={theme.palette.mode}
-                            donutColors={donutColors}
-                            donutEmpty={donutEmpty}
-                            animateCharts={animateCharts}
-                            dir={dir}
-                            onOpenModule={handleOpenModule}
-                          />
+                            sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: isSingleModuleCategory ? "100%" : "calc(50% - 12px)" } }}
+                          >
+                            {renderModuleCard(coreModule)}
+                          </Box>
                         )}
                         {group.items.map((mod) => (
-                          <DashboardModuleCard
+                          <Box
                             key={mod.key}
-                            mod={mod}
-                            stats={moduleStats[mod.key]}
-                            language={language}
-                            t={t}
-                            themeMode={theme.palette.mode}
-                            donutColors={donutColors}
-                            donutEmpty={donutEmpty}
-                            animateCharts={animateCharts}
-                            dir={dir}
-                            onOpenModule={handleOpenModule}
-                          />
+                            sx={{ display: "flex", flex: "1 1 560px", minWidth: 0, maxWidth: { xs: "100%", lg: isSingleModuleCategory ? "100%" : "calc(50% - 12px)" } }}
+                          >
+                            {renderModuleCard(mod)}
+                          </Box>
                         ))}
                       </Box>
                     </Box>
@@ -1251,10 +1170,24 @@ export default function HomePage() {
           PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
         >
           <DialogTitle sx={{ px: 3, py: 2.5, color: "common.white", textAlign: align, background: (theme) => theme.palette.home.heroGradient }}>
-            <Typography variant="h6" fontWeight={750}>{t.eventBreakdown}</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.25 }}>
-              {toArabicDigits(`${eventBusinessBreakdown.reduce((sum, business) => sum + Number(business.count || 0), 0)} ${t.eventCount}`, language)}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+              <Box>
+                <Typography variant="h6" fontWeight={750}>{t.eventBreakdown}</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.25 }}>
+                  {toArabicDigits(`${eventBusinessBreakdown.reduce((sum, business) => sum + Number(business.count || 0), 0)} ${t.eventCount}`, language)}
+                </Typography>
+              </Box>
+              <IconButton
+                aria-label={t.close}
+                onClick={() => {
+                  setShowEventDetails(false);
+                  setEventBusinessSearch("");
+                }}
+                sx={{ color: "common.white", mt: -0.5, mr: -1 }}
+              >
+                <ICONS.close />
+              </IconButton>
+            </Box>
           </DialogTitle>
           <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 4, sm: 4.5 }, bgcolor: "action.hover" }}>
             {eventBusinessBreakdown.length > 0 ? (
@@ -1338,7 +1271,7 @@ export default function HomePage() {
                                         }
                                         router.push(`/cms/modules/${moduleByEventType[event.eventType]}/events?search=${encodeURIComponent(event.slug)}`);
                                       }}
-                                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, "&:hover": { borderColor: "primary.main" } }}
+                                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: "50%", "&:hover": { borderColor: "primary.main" } }}
                                     >
                                       <OpenInNewIcon fontSize="small" />
                                     </IconButton>
@@ -1376,12 +1309,6 @@ export default function HomePage() {
               <Typography color="text.secondary">{t.noTotals}</Typography>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {
-              setShowEventDetails(false);
-              setEventBusinessSearch("");
-            }}>{t.close}</Button>
-          </DialogActions>
         </Dialog>
       </Container>
     </Box>
