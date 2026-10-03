@@ -28,6 +28,19 @@ export const getSurveyForm = withApiHandler(async (id) => {
  * @param {string} id - Survey form identifier.
  * @returns {Promise<object>} The form response or a structured request error.
  */
+export const getSurveyFormBySlugWithStatus = async (slug) => {
+  try {
+    const { data } = await api.get(`/surveyguru/forms/slug/${slug}`);
+    return data;
+  } catch (error) {
+    return {
+      error: true,
+      status: error?.response?.status,
+      message: error?.response?.data?.message || error?.message,
+    };
+  }
+};
+
 export const getSurveyFormWithStatus = async (id) => {
   try {
     const { data } = await api.get(`/surveyguru/forms/${id}`);

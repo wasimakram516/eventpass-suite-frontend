@@ -9,10 +9,17 @@ import {
   SURVEY_RECIPIENT_FORM_STATES,
 } from "./surveyRecipientNavigation.js";
 
-test("getSurveyRecipientUrl routes a recipient through its form", () => {
+test("getSurveyRecipientUrl routes a recipient through its form slug", () => {
   assert.equal(
-    getSurveyRecipientUrl("form-123", "sam@example.com"),
-    "/cms/modules/surveyguru/surveys/recipients?formId=form-123&search=sam%40example.com",
+    getSurveyRecipientUrl("post-event-survey", "sam@example.com"),
+    "/cms/modules/surveyguru/surveys/recipients/post-event-survey?search=sam%40example.com",
+  );
+});
+
+test("getSurveyRecipientUrl without a search omits the query", () => {
+  assert.equal(
+    getSurveyRecipientUrl("post-event-survey"),
+    "/cms/modules/surveyguru/surveys/recipients/post-event-survey",
   );
 });
 

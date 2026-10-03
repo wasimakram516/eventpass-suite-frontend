@@ -38,12 +38,12 @@ export const getSurveyRecipientBreadcrumbItems = ({
 ];
 
 /** Builds the direct recipient URL for a survey form. */
-export const getSurveyRecipientUrl = (formId, search = "") => {
-  if (!formId) return FORMS_PATH;
+export const getSurveyRecipientUrl = (formSlug, search = "") => {
+  if (!formSlug) return FORMS_PATH;
 
-  const params = new URLSearchParams({ formId: String(formId) });
-  if (search) params.set("search", String(search));
-  return `${RECIPIENTS_PATH}?${params.toString()}`;
+  const base = `${RECIPIENTS_PATH}/${encodeURIComponent(String(formSlug))}`;
+  if (!search) return base;
+  return `${base}?${new URLSearchParams({ search: String(search) }).toString()}`;
 };
 
 export { FORMS_PATH, RECIPIENTS_PATH };

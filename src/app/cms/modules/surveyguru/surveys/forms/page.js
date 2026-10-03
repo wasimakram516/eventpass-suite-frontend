@@ -1302,7 +1302,7 @@ export default function SurveyFormsManagePage() {
                           <IconButton
                             aria-label={t.recipientsAction}
                             color="primary"
-                            onClick={() => router.push(getSurveyRecipientUrl(f._id))}
+                            onClick={() => router.push(getSurveyRecipientUrl(f.slug))}
                           >
                             <ICONS.people fontSize="small" />
                           </IconButton>

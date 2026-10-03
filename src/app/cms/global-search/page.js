@@ -241,7 +241,7 @@ export default function GlobalSearchPage() {
       if (row.itemType === "SurveyRecipient") {
         const recipientSearch =
           row.email || row.fullName || row.company || "";
-        router.push(getSurveyRecipientUrl(row.formId, recipientSearch));
+        router.push(getSurveyRecipientUrl(row.formSlug, recipientSearch));
         return;
       }
 
