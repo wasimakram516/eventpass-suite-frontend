@@ -89,7 +89,6 @@ const translations = {
     selectEventFilter: "Filter by event",
     allEvents: "All events",
     newForm: "Create Form",
-    manageRecipients: "Manage Recipients",
     editForm: "Edit Survey Form",
     createForm: "Create Survey Form",
     cloneForm: "Clone Survey Form",
@@ -166,7 +165,6 @@ const translations = {
     selectEventFilter: "تصفية حسب الفعالية",
     allEvents: "جميع الفعاليات",
     newForm: "إنشاء نموذج",
-    manageRecipients: "إدارة المستلمين",
     editForm: "تحرير نموذج الاستبيان",
     createForm: "إنشاء نموذج الاستبيان",
     cloneForm: "استنساخ نموذج الاستبيان",
@@ -1031,15 +1029,6 @@ export default function SurveyFormsManagePage() {
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             <AuditSearchClearButton visible={Boolean(searchTerm)} onClear={() => setSearchTerm("")} />
-            {selectedBusiness?._id && <Button
-              fullWidth={isMobile}
-              variant="outlined"
-              startIcon={<ICONS.group fontSize="small" />}
-              onClick={() => router.push("/cms/modules/surveyguru/surveys/recipients")}
-              sx={isMobile ? { width: "100%", ...getStartIconSpacing(dir) } : getStartIconSpacing(dir)}
-            >
-              {t.manageRecipients}
-            </Button>}
             {selectedBusiness?._id && (
               <Button
                 fullWidth={isMobile}
