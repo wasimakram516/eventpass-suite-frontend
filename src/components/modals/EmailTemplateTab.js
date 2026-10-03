@@ -22,6 +22,7 @@ import { EMAIL_TEMPLATE_REQUIRED_MESSAGES } from "@/utils/emailTemplateMessages"
 import { uploadSingleFile } from "@/utils/mediaUpload";
 import {
   EMAIL_TEMPLATE_DEFAULTS,
+  EMAIL_PLACEHOLDER_GROUPS,
   EMAIL_TEMPLATE_RESERVED,
   EMAIL_TEMPLATE_WARNINGS,
   clampCustomImageSize,
@@ -242,7 +243,7 @@ const PlaceholderRow = ({ name, checked, onToggle, onCopy, copyLabel }) => (
  * @param {(field: "subject"|"body") => void} props.onClearError - Clears one required error
  * @returns {JSX.Element}
  */
-const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, businessSlug, errors, onClearError }) => {
+const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, isSurvey = false, businessSlug, errors, onClearError }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const [uploadingCustomImage, setUploadingCustomImage] = useState(false);
@@ -250,8 +251,8 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, bu
   const usePlaceholders = formData.emailTemplateUsePlaceholders;
   const selectedFields = formData.emailTemplateSelectedFields || [];
   const placeholderGroups = useMemo(
-    () => getPlaceholderGroups({ useCustomFields: formData.useCustomFields, formFields: formData.formFields, isPaid, isCheckIn }),
-    [formData.useCustomFields, formData.formFields, isPaid, isCheckIn],
+    () => getPlaceholderGroups({ useCustomFields: formData.useCustomFields, formFields: formData.formFields, isPaid, isCheckIn, isSurvey }),
+    [formData.useCustomFields, formData.formFields, isPaid, isCheckIn, isSurvey],
   );
   const placeholderNames = useMemo(() => placeholderGroups.flatMap((group) => group.names), [placeholderGroups]);
   const warnings = useMemo(
@@ -266,9 +267,10 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, bu
             selectedFields,
             isPaid,
             isCheckIn,
+            isSurvey,
           })
         : [],
-    [usePlaceholders, formData.emailTemplateSubject, formData.emailTemplateBody, formData.emailTemplateHeader, formData.useCustomFields, formData.formFields, selectedFields, isPaid, isCheckIn],
+    [usePlaceholders, formData.emailTemplateSubject, formData.emailTemplateBody, formData.emailTemplateHeader, formData.useCustomFields, formData.formFields, selectedFields, isPaid, isCheckIn, isSurvey],
   );
 
   // Each placeholder's own settings show only while its checkbox is ticked, and
@@ -456,7 +458,11 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, bu
             {placeholderGroups.map((group) => (
               <Box key={group.id} sx={{ mt: 1 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 600 }}>
-                  {t[group.id]}
+                  {group.id === EMAIL_PLACEHOLDER_GROUPS.LINKS && isSurvey
+                    ? dir === "rtl"
+                      ? "رابط الاستبيان"
+                      : "Survey Link"
+                    : t[group.id]}
                 </Typography>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, columnGap: 3, rowGap: 0.5 }}>
                   {group.names.map((name) => {

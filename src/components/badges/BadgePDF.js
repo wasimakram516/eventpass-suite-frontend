@@ -10,87 +10,22 @@ import {
 } from "@react-pdf/renderer";
 import { resolveBadgeDimensions } from "@/utils/badgeSize";
 import { getTheme } from "@/styles/theme";
+import { FONT_REGISTRY } from "@/utils/fontRegistry";
 
 // react-pdf's default hyphenation engine breaks long words mid-word and
 // inserts a visible "-" when a word doesn't fit its container width.
 // Disabling it makes wrapping happen only at word boundaries (spaces).
-// NOTE: keep this call up here, above the generated block below — that
-// block is rewritten wholesale by scripts/generateFonts.js on every run,
-// so anything placed inside it (or referencing its marker text) gets lost.
 Font.registerHyphenationCallback((word) => [word]);
 
-// --------------------------------------------------------------
-// STATIC FONT REGISTRATION (AUTO-GENERATED)
-// --------------------------------------------------------------
-Font.register({
-  family: "IBM Plex Sans Arabic",
-  fonts: [
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Midable",
-  fonts: [
-    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Arial",
-  fonts: [
-    { src: "/fonts/arial/ArialBold.ttf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/arial/ArialRegular.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Futura",
-  fonts: [
-    { src: "/fonts/futura/FuturaStdBold.otf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdBook.otf", fontWeight: 400, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdBookOblique.otf", fontWeight: 400, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondensed.otf", fontWeight: 400, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdCondensedBold.otf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdCondensedBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondensedExtraBd.otf", fontWeight: 900, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdCondensedLight.otf", fontWeight: 300, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdCondensedLightObl.otf", fontWeight: 300, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondensedOblique.otf", fontWeight: 400, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdExtraBold.otf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdExtraBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdHeavy.otf", fontWeight: 800, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdHeavyOblique.otf", fontWeight: 800, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdLight.otf", fontWeight: 300, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdLightOblique.otf", fontWeight: 300, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdMedium.otf", fontWeight: 500, fontStyle: 'normal' },
-    { src: "/fonts/futura/FuturaStdMediumOblique.otf", fontWeight: 500, fontStyle: 'italic' }
-  ],
-});
-
-Font.register({
-  family: "Love",
-  fonts: [
-    { src: "/fonts/love/LoveDays-2v7Oe.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Romeo",
-  fonts: [
-    { src: "/fonts/romeo/Pinky Peace.otf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Welcome",
-  fonts: [
-    { src: "/fonts/welcome/Welcome September.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
+FONT_REGISTRY.forEach(({ family, files }) => {
+  Font.register({
+    family,
+    fonts: files.map(({ path, weight, style }) => ({
+      src: path,
+      fontWeight: weight,
+      fontStyle: style,
+    })),
+  });
 });
 
 const A6_WIDTH = 297.6;
@@ -155,7 +90,7 @@ const styles = StyleSheet.create({
   token: {
     fontSize: 9,
     fontWeight: "bold",
-    color: PDF_COLORS.black,
+    color: PDF_COLORS.brand,
     letterSpacing: 0.7,
     textAlign: "center",
   },
@@ -608,7 +543,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
               style={{
                 fontSize: ((customizations._qrCode.size || 70) / 70) * 9 * (72 / 96),
                 fontWeight: "bold",
-                color: PDF_COLORS.black,
+                color: PDF_COLORS.brand,
                 letterSpacing: 0.7,
                 marginTop: 2,
               }}

@@ -28,6 +28,8 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Tab,
+  Tabs,
 } from "@mui/material";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -66,6 +68,14 @@ import { deleteMedia } from "@/services/deleteMediaService";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
+import SurveyNotificationSettings from "@/components/surveyguru/SurveyNotificationSettings";
+import useWhatsAppCatalog from "@/hooks/useWhatsAppCatalog";
+import {
+  buildSurveyNotificationPayload,
+  createSurveyNotificationSettings,
+  validateSurveyNotificationSettings,
+} from "@/utils/surveyNotificationSettings";
+import { getSurveyBuilderNavigation } from "@/utils/surveyBuilderNavigation";
 
 const translations = {
   en: {
@@ -117,7 +127,9 @@ const translations = {
     max: "Max",
     step: "Step",
     removeQuestion: "Remove question",
-    cancel: "Cancel",
+    close: "Close",
+    back: "Back",
+    next: "Next",
     save: "Save changes",
     saving: "Saving...",
     updating: "Updating...",
@@ -190,7 +202,9 @@ const translations = {
     max: "الحد الأقصى",
     step: "الخطوة",
     removeQuestion: "إزالة السؤال",
-    cancel: "إلغاء",
+    close: "إغلاق",
+    back: "رجوع",
+    next: "التالي",
     save: "حفظ التغييرات",
     saving: "جارٍ الحفظ...",
     updating: "جارٍ التحديث...",
@@ -227,6 +241,78 @@ const emptyQuestion = () => ({
   scale: { min: 1, max: 5, step: 1 },
 });
 
+/**
+ * English/Arabic default-language toggle used in the SurveyGuru Options tab.
+ *
+ * @param {object} props
+ * @returns {JSX.Element}
+ */
+const LanguageToggle = ({ value, onChange }) => (
+  <Box
+    role="button"
+    tabIndex={0}
+    aria-label="Default survey language"
+    onClick={() => onChange(value === "en" ? "ar" : "en")}
+    onKeyDown={(event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onChange(value === "en" ? "ar" : "en");
+      }
+    }}
+    sx={{
+      width: 64,
+      height: 32,
+      borderRadius: 32,
+      backgroundColor: "background.paper",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      px: 1,
+      cursor: "pointer",
+      overflow: "hidden",
+      boxShadow: (theme) => theme.palette.shadow.neumorphicToggle,
+      position: "relative",
+    }}
+  >
+    <Typography
+      variant="caption"
+      sx={{
+        fontWeight: 600,
+        color: value === "en" ? "primary.contrastText" : "text.secondary",
+        zIndex: 2,
+        transition: "color 0.3s",
+      }}
+    >
+      EN
+    </Typography>
+    <Typography
+      variant="caption"
+      sx={{
+        fontWeight: 600,
+        color: value === "ar" ? "primary.contrastText" : "text.secondary",
+        zIndex: 2,
+        transition: "color 0.3s",
+      }}
+    >
+      AR
+    </Typography>
+    <Box
+      sx={{
+        position: "absolute",
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        top: 2,
+        left: value === "ar" ? 34 : 2,
+        backgroundColor: (theme) => theme.palette.primary.main,
+        zIndex: 1,
+        boxShadow: (theme) => theme.palette.shadow.toggleKnob,
+        transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+      }}
+    />
+  </Box>
+);
+
 const MAX_DESCRIPTION_CHARS = 150;
 
 export default function SurveyFormsManagePage() {
@@ -245,6 +331,8 @@ export default function SurveyFormsManagePage() {
   const canDelete = useHasPermission("surveyguru", "delete");
   const canShare = useHasPermission("surveyguru", "share");
   const canDownload = useHasPermission("surveyguru", "download");
+  const canSendWhatsapp = useHasPermission("surveyguru", "send_whatsapp");
+  const canConfigureWhatsApp = ["admin", "superadmin"].includes(user?.role) && canSendWhatsapp;
 
   const [bizDrawerOpen, setBizDrawerOpen] = useState(false);
 
@@ -271,6 +359,11 @@ export default function SurveyFormsManagePage() {
   const [defaultLanguage, setDefaultLanguage] = useState("en");
   const [questions, setQuestions] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
+  const [notificationSettings, setNotificationSettings] = useState(() =>
+    createSurveyNotificationSettings(),
+  );
+  const [notificationError, setNotificationError] = useState("");
+  const [builderTab, setBuilderTab] = useState("details");
 
   const [optionFiles, setOptionFiles] = useState({});
   const [optionPreviews, setOptionPreviews] = useState({});
@@ -331,6 +424,9 @@ export default function SurveyFormsManagePage() {
     setDefaultLanguage("en");
     setQuestions([]);
     setSelectedEventId("");
+    setNotificationSettings(createSurveyNotificationSettings());
+    setNotificationError("");
+    setBuilderTab("details");
     setErrors({});
     setOptionFiles({});
     setOptionPreviews({});
@@ -367,6 +463,11 @@ export default function SurveyFormsManagePage() {
     });
 
     setErrors(e);
+    if (Object.keys(e).some((key) => key === "event" || key === "title" || key === "slug")) {
+      setBuilderTab("details");
+    } else if (Object.keys(e).length) {
+      setBuilderTab("questions");
+    }
     return Object.keys(e).length === 0;
   };
   const fetchBusinesses = async () => {
@@ -438,6 +539,8 @@ export default function SurveyFormsManagePage() {
 
     const evId = latestForm.eventId?._id || latestForm.eventId || "";
     setSelectedEventId(evId);
+    const linkedEvent = events.find((event) => String(event._id) === String(evId));
+    setNotificationSettings(createSurveyNotificationSettings(latestForm, linkedEvent));
 
     const qs = (latestForm.questions || []).map((q, idx) => ({
       _id: q._id,
@@ -471,6 +574,68 @@ export default function SurveyFormsManagePage() {
 
     setOpen(true);
   };
+
+  const selectedEvent = useMemo(
+    () => events.find((event) => String(event._id) === String(selectedEventId)) || null,
+    [events, selectedEventId],
+  );
+  const whatsappCatalog = useWhatsAppCatalog(
+    ["surveyguru"],
+    open,
+  );
+  const builderTabs = useMemo(() => {
+    const labels = language === "ar"
+      ? {
+          details: "تفاصيل الاستبيان",
+          options: "الخيارات",
+          email: "البريد المخصص",
+          whatsapp: "واتساب",
+          questions: "الأسئلة",
+        }
+      : {
+          details: "Survey Details",
+          options: "Options",
+          email: "Custom Email",
+          whatsapp: "WhatsApp",
+          questions: "Questions",
+        };
+    return [
+      { id: "details", label: labels.details },
+      { id: "options", label: labels.options },
+      ...(notificationSettings.useCustomEmailTemplate
+        ? [{ id: "email", label: labels.email }]
+        : []),
+      ...(canConfigureWhatsApp && notificationSettings.useCustomWhatsAppMessages
+        ? [{ id: "whatsapp", label: labels.whatsapp }]
+        : []),
+      { id: "questions", label: labels.questions },
+    ];
+  }, [
+    canConfigureWhatsApp,
+    language,
+    notificationSettings.useCustomEmailTemplate,
+    notificationSettings.useCustomWhatsAppMessages,
+  ]);
+  const builderNavigation = useMemo(
+    () => getSurveyBuilderNavigation(builderTabs, builderTab),
+    [builderTab, builderTabs],
+  );
+
+  useEffect(() => {
+    if (!builderTabs.some((tab) => tab.id === builderTab)) setBuilderTab("options");
+  }, [builderTab, builderTabs]);
+
+  useEffect(() => {
+    setNotificationSettings((current) => ({
+      ...current,
+      name: selectedEvent?.name || "Survey",
+      logoPreview: selectedEvent?.logoUrl || "",
+      organizerLogoPreview: selectedEvent?.organizerLogoUrl || "",
+      useCustomFields: Boolean(selectedEvent?.useCustomFields),
+      formFields: selectedEvent?.formFields || [],
+      defaultLanguage,
+    }));
+  }, [selectedEvent, defaultLanguage]);
 
   const duplicateQuestion = (idx) =>
     setQuestions((prev) => {
@@ -623,6 +788,25 @@ export default function SurveyFormsManagePage() {
 
   const handleSave = async () => {
     if (!validate()) return;
+    if (canConfigureWhatsApp && notificationSettings.useCustomWhatsAppMessages && whatsappCatalog.loading) {
+      setNotificationError("WhatsApp templates are still loading. Please try again.");
+      return;
+    }
+    const notificationValidationError = validateSurveyNotificationSettings(
+      {
+        ...notificationSettings,
+        useCustomWhatsAppMessages:
+          canConfigureWhatsApp && notificationSettings.useCustomWhatsAppMessages,
+      },
+      whatsappCatalog,
+      isAnonymous,
+    );
+    if (notificationValidationError) {
+      setNotificationError(notificationValidationError);
+      setBuilderTab(notificationValidationError.startsWith("Custom email") ? "email" : "whatsapp");
+      return;
+    }
+    setNotificationError("");
     if (!selectedBusiness?.slug) {
       showMessage("Business information is missing. Please refresh the page and try again.", "error");
       return;
@@ -746,6 +930,7 @@ export default function SurveyFormsManagePage() {
         isAnonymous: !!isAnonymous,
         defaultLanguage,
         questions: qs,
+        ...buildSurveyNotificationPayload(notificationSettings, whatsappCatalog),
       };
 
       let result;
@@ -1184,12 +1369,41 @@ export default function SurveyFormsManagePage() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>{editing ? t.editForm : t.createForm}</DialogTitle>
+        <DialogTitle sx={{ position: "relative", pr: 7 }}>
+          {editing ? t.editForm : t.createForm}
+          <IconButton
+            aria-label={t.close}
+            onClick={() => setOpen(false)}
+            disabled={saving}
+            sx={{
+              position: "absolute",
+              right: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
+            <Tabs
+              value={builderTab}
+              onChange={(_, value) => setBuilderTab(value)}
+              variant="scrollable"
+              scrollButtons="auto"
+              aria-label="Survey form sections"
+              sx={{ borderBottom: 1, borderColor: "divider" }}
+            >
+              {builderTabs.map((tab) => (
+                <Tab key={tab.id} value={tab.id} label={tab.label} />
+              ))}
+            </Tabs>
+
+            <Box sx={{ display: builderTab === "details" ? "flex" : "none", flexDirection: "column", gap: 2 }}>
             <FormControl fullWidth size="large">
               <Select
                 value={selectedEventId}
@@ -1241,68 +1455,10 @@ export default function SurveyFormsManagePage() {
               minRows={2}
             />
 
-            {/* Default Language Selector */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Box
-                onClick={() =>
-                  setDefaultLanguage((prev) => (prev === "en" ? "ar" : "en"))
-                }
-                sx={{
-                  width: 64,
-                  height: 32,
-                  borderRadius: 32,
-                  backgroundColor: "background.paper",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  px: 1,
-                  cursor: "pointer",
-                  overflow: "hidden",
-                  boxShadow: (theme) => theme.palette.shadow.neumorphicToggle,
-                  position: "relative",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 600,
-                    color: defaultLanguage === "en" ? "primary.contrastText" : "text.secondary",
-                    zIndex: 2,
-                    transition: "color 0.3s",
-                  }}
-                >
-                  EN
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 600,
-                    color: defaultLanguage === "ar" ? "primary.contrastText" : "text.secondary",
-                    zIndex: 2,
-                    transition: "color 0.3s",
-                  }}
-                >
-                  AR
-                </Typography>
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    top: 2,
-                    left: defaultLanguage === "ar" ? 34 : 2,
-                    backgroundColor: (theme) => theme.palette.primary.main,
-                    zIndex: 1,
-                    boxShadow: (theme) => theme.palette.shadow.toggleKnob,
-                    transition:
-                      "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-                  }}
-                />
-              </Box>
             </Box>
 
+            <Box sx={{ display: builderTab === "options" ? "flex" : "none", flexDirection: "column", gap: 1 }}>
+            <LanguageToggle value={defaultLanguage} onChange={setDefaultLanguage} />
             <FormControlLabel
               control={
                 <Switch
@@ -1322,6 +1478,51 @@ export default function SurveyFormsManagePage() {
               }
               label={t.fAnonymous}
             />
+
+            <SurveyNotificationSettings
+              value={notificationSettings}
+              onChange={setNotificationSettings}
+              event={selectedEvent}
+              isAnonymous={isAnonymous}
+              open={open}
+              error={notificationError}
+              businessSlug={selectedBusiness?.slug}
+              canConfigureWhatsApp={canConfigureWhatsApp}
+              section="options"
+            />
+            </Box>
+
+            {notificationSettings.useCustomEmailTemplate && builderTab === "email" && (
+              <SurveyNotificationSettings
+                value={notificationSettings}
+                onChange={setNotificationSettings}
+                event={selectedEvent}
+                isAnonymous={isAnonymous}
+                open={open}
+                error={notificationError}
+                businessSlug={selectedBusiness?.slug}
+                canConfigureWhatsApp={canConfigureWhatsApp}
+                section="email"
+              />
+            )}
+
+            {canConfigureWhatsApp &&
+              notificationSettings.useCustomWhatsAppMessages &&
+              builderTab === "whatsapp" && (
+                <SurveyNotificationSettings
+                  value={notificationSettings}
+                  onChange={setNotificationSettings}
+                  event={selectedEvent}
+                  isAnonymous={isAnonymous}
+                  open={open}
+                  error={notificationError}
+                  businessSlug={selectedBusiness?.slug}
+                  canConfigureWhatsApp={canConfigureWhatsApp}
+                  section="whatsapp"
+                />
+              )}
+
+            <Box sx={{ display: builderTab === "questions" ? "block" : "none" }}>
             <Divider sx={{ my: 1 }} />
 
             <Stack
@@ -1654,40 +1855,57 @@ export default function SurveyFormsManagePage() {
                 {t.addQuestion}
               </Button>
             </Box>
+            </Box>
           </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            startIcon={<ICONS.cancel fontSize="small" />}
-            sx={getStartIconSpacing(dir)}
-            disabled={saving}
-          >
-            {t.cancel}
-          </Button>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          {builderNavigation.previousTabId && (
+            <Button
+              variant="outlined"
+              onClick={() => setBuilderTab(builderNavigation.previousTabId)}
+              disabled={saving}
+              startIcon={dir === "rtl" ? <ICONS.next /> : <ICONS.back />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.back}
+            </Button>
+          )}
 
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            startIcon={
-              saving ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <ICONS.save fontSize="small" />
-              )
-            }
-            sx={getStartIconSpacing(dir)}
-            disabled={saving}
-          >
-            {saving
-              ? editing
-                ? t.updating
-                : t.saving
-              : editing
-                ? t.save
-                : t.create}
-          </Button>
+          {builderNavigation.nextTabId ? (
+            <Button
+              variant="contained"
+              onClick={() => setBuilderTab(builderNavigation.nextTabId)}
+              disabled={saving}
+              startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.next}
+            </Button>
+          ) : (
+            builderNavigation.isLastTab && (
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                startIcon={
+                  saving ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : (
+                    <ICONS.save fontSize="small" />
+                  )
+                }
+                sx={getStartIconSpacing(dir)}
+                disabled={saving}
+              >
+                {saving
+                  ? editing
+                    ? t.updating
+                    : t.saving
+                  : editing
+                    ? t.save
+                    : t.create}
+              </Button>
+            )
+          )}
         </DialogActions>
       </Dialog>
       <ShareLinkModal

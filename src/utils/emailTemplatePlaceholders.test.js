@@ -122,6 +122,14 @@ test("getPlaceholderGroups: the confirmation button and link are a Links group t
   });
 });
 
+test("getPlaceholderGroups: SurveyGuru gets its own Survey Button and Survey Link placeholders", () => {
+  assert.deepEqual(getPlaceholderGroups({ useCustomFields: false, isSurvey: true }).at(-1), {
+    id: "links",
+    names: ["Survey Button", "Survey Link"],
+  });
+  assert.ok(getReservedPlaceholderNames({ isSurvey: true }).includes("Survey Link"));
+});
+
 test("getPlaceholderGroups: attendee details follow the event's custom fields and keep the registration details table", () => {
   const groups = getPlaceholderGroups({ useCustomFields: true, formFields: customFields });
   assert.deepEqual(groups.find((g) => g.id === "attendeeDetails").names, [

@@ -103,3 +103,15 @@ export function buildEmailSendFields(data) {
   }
   return fields;
 }
+
+/**
+ * Whether a notification service result represents a completed send.
+ * API helpers resolve failures as `{ error: true }`, so callers must not treat
+ * every resolved promise as success.
+ *
+ * @param {object|null|undefined} result - Result returned by a notification service
+ * @returns {boolean} True unless the API helper reported an error
+ */
+export function isNotificationSendSuccessful(result) {
+  return result?.error !== true;
+}

@@ -164,6 +164,21 @@ test("buildEmailPreview: {Confirmation Button} and {Confirmation Link} are indep
   assert.match(other.html, /<div>\[\]<\/div>\s*<div>\[\]<\/div>/);
 });
 
+test("buildEmailPreview: SurveyGuru renders Survey Button and a personalized Survey Link sample", () => {
+  const { html, subject } = buildEmailPreview({
+    template: {
+      subject: "Complete: {Survey Link}",
+      body: "<div>{Survey Button}</div><div>{Survey Link}</div>",
+      accentColor: "#112233",
+    },
+    useCustomFields: false,
+    isSurvey: true,
+  });
+  assert.equal(subject, "Complete: https://example.com/surveyguru/en/sample-survey?token=A1B2C3D4E5");
+  assert.match(html, /Open Survey/);
+  assert.match(html, /surveyguru\/en\/sample-survey\?token=A1B2C3D4E5/);
+});
+
 test("buildEmailPreview: registration details lists the attendee fields, and visual blocks are blank in the subject", () => {
   const { html, subject } = buildEmailPreview({
     template: { subject: "a{Registration Details}{Event Description}{Confirmation Button}b", body: "{Registration Details}" },

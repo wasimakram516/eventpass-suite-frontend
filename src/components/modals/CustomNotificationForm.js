@@ -18,20 +18,23 @@ import { eventInfoFromEvent } from "@/utils/emailEventDetails";
  * @param {(file: File|null) => void} props.onFileChange - Called when the file changes or is removed
  * @returns {JSX.Element}
  */
-const CustomNotificationForm = ({ composer, event, attachedFile, onFileChange }) => (
+const CustomNotificationForm = ({ composer, event, attachedFile, onFileChange, showAttachment = true, isSurvey = false }) => (
   <EmailTemplateWorkspace
     formData={composer.form}
     setFormData={composer.setForm}
     isPaid={isEventPaid(event)}
     isCheckIn={isCheckInEvent(event)}
+    isSurvey={isSurvey}
     businessSlug={event?.businessSlug}
     eventInfo={eventInfoFromEvent(event)}
     errors={composer.errors}
     onClearError={composer.clearError}
   >
-    <Box sx={{ mt: 2 }}>
-      <AttachmentPicker file={attachedFile} onChange={onFileChange} />
-    </Box>
+    {showAttachment && (
+      <Box sx={{ mt: 2 }}>
+        <AttachmentPicker file={attachedFile} onChange={onFileChange} />
+      </Box>
+    )}
   </EmailTemplateWorkspace>
 );
 
