@@ -22,6 +22,25 @@ export const getSurveyForm = withApiHandler(async (id) => {
   return data;
 });
 
+/**
+ * Retrieves a survey form while retaining HTTP status for safe page-state handling.
+ *
+ * @param {string} id - Survey form identifier.
+ * @returns {Promise<object>} The form response or a structured request error.
+ */
+export const getSurveyFormWithStatus = async (id) => {
+  try {
+    const { data } = await api.get(`/surveyguru/forms/${id}`);
+    return data;
+  } catch (error) {
+    return {
+      error: true,
+      status: error?.response?.status,
+      message: error?.response?.data?.message || error?.message,
+    };
+  }
+};
+
 // CMS: UPDATE FORM
 export const updateSurveyForm = withApiHandler(
   async (id, payload) => {

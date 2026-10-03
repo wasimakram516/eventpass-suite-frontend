@@ -26,13 +26,10 @@ import {
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import AuditSearchClearButton from "@/components/AuditSearchClearButton";
-import BusinessDrawer from "@/components/drawers/BusinessDrawer";
-import InlineBusinessPicker from "@/components/business/InlineBusinessPicker";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
@@ -47,10 +44,15 @@ import {
   SURVEY_RECIPIENT_FILTER_PAYLOADS,
 } from "@/utils/notificationRecipientFilters";
 import { getSurveyRecipientNotificationState } from "@/utils/surveyRecipientNotificationState";
+import {
+  FORMS_PATH,
+  getSurveyRecipientBreadcrumbItems,
+  getSurveyRecipientFormState,
+  SURVEY_RECIPIENT_FORM_STATES,
+} from "@/utils/surveyRecipientNavigation";
 
-import { getAllBusinesses } from "@/services/businessService";
+import { getSurveyFormWithStatus } from "@/services/surveyguru/surveyFormService";
 import { getEventsByBusinessId } from "@/services/eventreg/eventService";
-import { listSurveyForms } from "@/services/surveyguru/surveyFormService";
 
 import {
   listRecipients,
@@ -68,13 +70,19 @@ import {
 import useSurveyGuruSocket from "@/hooks/modules/surveyguru/useSurveyGuruSocket";
 
 import FilterDialog from "@/components/modals/FilterModal";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const translations = {
   en: {
     title: "Manage Recipients",
-    subtitle: "Pick a business, then open Filters to choose event & form.",
-    selectBusiness: "Select Business",
+    surveyGuru: "SurveyGuru",
+    surveyForms: "Survey Forms",
+    subtitle: "Manage recipients for the selected survey form.",
+    linkedEvent: "Linked event",
+    loadingForm: "Loading survey form…",
+    accessDenied: "You do not have access to this survey form.",
+    formDeleted: "This survey form has been deleted.",
+    formNotFound: "Survey form not found or no longer available.",
     filters: "Filters",
     filtersActions: "Filters & Actions",
     actions: "Actions",
@@ -107,18 +115,9 @@ const translations = {
     delete: "Delete",
 
     copied: "Link copied!",
-    noFormSelected: "Use Filters to select a form and load recipients.",
-    workflowTitle: "Follow these steps to load and manage recipients",
-    stepBusiness: "1. Select business",
-    stepEvent: "2. Select event",
-    stepForm: "3. Select form",
-    readyToLoad:
-      "Recipients load automatically after selecting a form. If none appear, click Sync from Event.",
     syncHint:
       "No recipients found yet for this form. Sync from event registrations to populate recipients.",
     syncNow: "Sync Now",
-    chooseEvent: "Choose Event",
-    chooseForm: "Choose Survey Form",
     noRecipientsYet: "No recipients available for this form yet.",
     selections: "Selections",
     email: "Email",
@@ -149,8 +148,14 @@ const translations = {
   },
   ar: {
     title: "إدارة المستلمين",
-    subtitle: "اختر الشركة، ثم افتح عوامل التصفية لاختيار الفعالية والنموذج.",
-    selectBusiness: "اختر الشركة",
+    surveyGuru: "سيرفي جورو",
+    surveyForms: "نماذج الاستبيان",
+    subtitle: "إدارة مستلمي نموذج الاستبيان المحدد.",
+    linkedEvent: "الفعالية المرتبطة",
+    loadingForm: "جارٍ تحميل نموذج الاستبيان…",
+    accessDenied: "ليس لديك صلاحية الوصول إلى نموذج الاستبيان هذا.",
+    formDeleted: "تم حذف نموذج الاستبيان هذا.",
+    formNotFound: "نموذج الاستبيان غير موجود أو لم يعد متاحًا.",
     filters: "عوامل التصفية",
     filtersActions: "عوامل التصفية والإجراءات",
     actions: "إجراءات",
@@ -181,18 +186,9 @@ const translations = {
     delete: "حذف",
 
     copied: "تم نسخ الرابط!",
-    noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",
-    workflowTitle: "اتبع هذه الخطوات لتحميل المستلمين وإدارتهم",
-    stepBusiness: "١. اختر الشركة",
-    stepEvent: "٢. اختر الفعالية",
-    stepForm: "٣. اختر نموذج الاستبيان",
-    readyToLoad:
-      "سيتم تحميل المستلمين تلقائيًا بعد اختيار النموذج. إذا لم يظهروا، اضغط مزامنة من الفعالية.",
     syncHint:
       "لا يوجد مستلمون لهذا النموذج حتى الآن. قم بالمزامنة من تسجيلات الفعالية.",
     syncNow: "زامن الآن",
-    chooseEvent: "اختر الفعالية",
-    chooseForm: "اختر نموذج الاستبيان",
     noRecipientsYet: "لا يوجد مستلمون لهذا النموذج حتى الآن.",
     selections: "الاختيارات",
     email: "البريد الإلكتروني",
@@ -224,11 +220,7 @@ const translations = {
 };
 
 export default function RecipientsManagePage() {
-  const {
-    user,
-    selectedBusiness: contextBusinessSlug,
-    setSelectedBusiness,
-  } = useAuth();
+  const router = useRouter();
   const { showMessage } = useMessage();
   const { t, dir, language } = useI18nLayout(translations);
 
@@ -237,27 +229,15 @@ export default function RecipientsManagePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [bizDrawerOpen, setBizDrawerOpen] = useState(false);
-  const [businesses, setBusinesses] = useState([]);
-  const [selectedBizSlug, setSelectedBizSlug] = useState(null);
-  const selectedBusiness = useMemo(
-    () => businesses.find((b) => b.slug === selectedBizSlug),
-    [businesses, selectedBizSlug]
-  );
-
-  const [events, setEvents] = useState([]);
-  const [forms, setForms] = useState([]);
-
-  // applied filters (live)
-  const [eventId, setEventId] = useState("");
   const [formId, setFormId] = useState("");
+  const [selectedForm, setSelectedForm] = useState(null);
+  const [linkedEvent, setLinkedEvent] = useState(null);
+  const [formState, setFormState] = useState("loading");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
 
   // filter modal (staged)
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [mEventId, setMEventId] = useState("");
-  const [mFormId, setMFormId] = useState("");
   const [mQ, setMQ] = useState("");
   const [mStatus, setMStatus] = useState("");
 
@@ -279,8 +259,6 @@ export default function RecipientsManagePage() {
   const [total, setTotal] = useState(0);
   const syncTimeoutRef = useRef(null);
   const recipientStatusTimeoutRef = useRef(null);
-  const [urlInitialized, setUrlInitialized] = useState(false);
-  const [pendingUrlInit, setPendingUrlInit] = useState(null);
 
   const refreshRecipients = async ({
     targetFormId = formId,
@@ -397,102 +375,66 @@ export default function RecipientsManagePage() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const list = await getAllBusinesses();
-      setBusinesses(list || []);
-      const businessIdFromUrl = searchParams.get("businessId");
-
-      if (businessIdFromUrl) {
-        const biz = (list || []).find(
-          (b) => String(b._id) === String(businessIdFromUrl),
-        );
-        if (biz) {
-          setSelectedBizSlug(biz.slug);
-          setSelectedBusiness(biz.slug);
-          setPendingUrlInit({
-            businessId: businessIdFromUrl,
-            eventId: searchParams.get("eventId"),
-            formId: searchParams.get("formId"),
-            search: searchParams.get("search") || "",
-          });
-        }
-      } else if (contextBusinessSlug) {
-        setSelectedBizSlug(contextBusinessSlug);
-      } else if (user?.role === "business" && user.business?.slug) {
-        const slug = user.business.slug;
-        setSelectedBizSlug(slug);
-        setSelectedBusiness(slug);
-      }
-    })();
-  }, [user, contextBusinessSlug, setSelectedBusiness, searchParams]);
-
-  useEffect(() => {
-    (async () => {
-      setEvents([]);
-      setForms([]);
-      setEventId("");
-      setFormId("");
-      setQ("");
-      setStatus("");
-      setRows([]);
-
-      if (!selectedBusiness?._id) return;
-
-      const evRes = await getEventsByBusinessId(selectedBusiness._id);
-      setEvents(evRes?.events || evRes?.data?.events || evRes || []);
-
-      const fRes = await listSurveyForms({
-        businessId: selectedBusiness._id,
-        withCounts: 1,
-      });
-      setForms(fRes?.data || fRes || []);
-
-      setMEventId("");
-      setMFormId("");
-      setMQ("");
-      setMStatus("");
-    })();
-  }, [selectedBizSlug]);
-
-  useEffect(() => {
-    if (urlInitialized || !pendingUrlInit) return;
-    if (!forms.length) return;
-
-    const { eventId: urlEventId, formId: urlFormId, search: urlSearch } =
-      pendingUrlInit;
-
-    const hasForm = urlFormId
-      ? forms.some((f) => String(f._id) === String(urlFormId))
-      : false;
-
-    if (!hasForm) {
-      setUrlInitialized(true);
-      setPendingUrlInit(null);
+    const requestedFormId = searchParams.get("formId");
+    if (!requestedFormId) {
+      router.replace(FORMS_PATH);
       return;
     }
 
-    if (urlEventId) {
-      const hasEvent = events.some(
-        (e) => String(e._id) === String(urlEventId),
-      );
-      if (hasEvent) {
-        setEventId(urlEventId);
-      }
-    }
-
-    setFormId(urlFormId);
-    if (urlSearch) {
-      setQ(urlSearch);
-    }
+    let active = true;
+    setFormState("loading");
+    setRows([]);
+    setTotal(0);
+    setFormId(requestedFormId);
+    setQ(searchParams.get("search") || "");
+    setStatus("");
     setPage(1);
 
-    setUrlInitialized(true);
-    setPendingUrlInit(null);
-  }, [pendingUrlInit, urlInitialized, forms, events]);
+    getSurveyFormWithStatus(requestedFormId).then((result) => {
+      if (!active) return;
+      const form = result?.data || result;
+      const nextFormState = getSurveyRecipientFormState(result);
+      if (nextFormState !== SURVEY_RECIPIENT_FORM_STATES.READY) {
+        setSelectedForm(null);
+        setLinkedEvent(null);
+        setFormState(nextFormState);
+        return;
+      }
+      setSelectedForm(form);
+      setLinkedEvent(
+        form.eventId && typeof form.eventId === "object" ? form.eventId : null,
+      );
+      setFormState("ready");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [router, searchParams]);
+
+  useEffect(() => {
+    const linkedEventId = selectedForm?.eventId?._id || selectedForm?.eventId;
+    const businessId = selectedForm?.businessId?._id || selectedForm?.businessId;
+
+    if (!linkedEventId || !businessId || linkedEvent?.name) return;
+
+    let active = true;
+    getEventsByBusinessId(businessId).then((result) => {
+      if (!active || result?.error) return;
+      const events = result?.events || result?.data?.events || [];
+      setLinkedEvent(
+        events.find((event) => String(event._id) === String(linkedEventId)) || null,
+      );
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [linkedEvent?.name, selectedForm]);
 
   useEffect(() => {
     (async () => {
-      if (!formId) {
+      if (!formId || formState !== "ready") {
         setRows([]);
         return;
       }
@@ -511,12 +453,11 @@ export default function RecipientsManagePage() {
 
       setLoading(false);
     })();
-  }, [formId, q, status, page, limit]);
+  }, [formId, formState, q, status, page, limit]);
 
   const handleSync = async () => {
     if (!formId) return;
-    const fallbackEventId = selectedForm?.eventId?._id || selectedForm?.eventId || "";
-    const eventIdForSync = eventId || fallbackEventId;
+    const eventIdForSync = selectedForm?.eventId?._id || selectedForm?.eventId || "";
 
     setSyncLoading(true);
 
@@ -602,15 +543,16 @@ export default function RecipientsManagePage() {
     setConfirmDelete({ open: false, id: null });
   };
 
-  const selectedForm = useMemo(
-    () => forms.find((f) => String(f._id) === String(formId)),
-    [forms, formId]
+  const selectedEvent = useMemo(
+    () =>
+      linkedEvent ||
+      (selectedForm?.eventId && typeof selectedForm.eventId === "object"
+        ? selectedForm.eventId
+        : null),
+    [linkedEvent, selectedForm],
   );
 
-  const selectedEvent = useMemo(
-    () => events.find((e) => String(e._id) === String(eventId)),
-    [events, eventId]
-  );
+  const eventId = selectedForm?.eventId?._id || selectedForm?.eventId || "";
 
   const surveyNotificationEvent = useMemo(
     () => ({
@@ -622,16 +564,8 @@ export default function RecipientsManagePage() {
     [selectedEvent, selectedForm],
   );
 
-  const filteredForms = useMemo(
-    () =>
-      forms.filter(
-        (f) => !eventId || String(f.eventId?._id || f.eventId) === String(eventId)
-      ),
-    [forms, eventId]
-  );
-
   const canSync = Boolean(
-    formId && (eventId || selectedForm?.eventId?._id || selectedForm?.eventId)
+    formId && (selectedForm?.eventId?._id || selectedForm?.eventId)
   );
   const canBulkImport = useHasPermission("surveyguru", "bulk_import");
   const canSendEmail = useHasPermission("surveyguru", "send_email");
@@ -639,7 +573,6 @@ export default function RecipientsManagePage() {
   const canExport = useHasPermission("surveyguru", "export");
   const canDelete = useHasPermission("surveyguru", "delete");
   const canShare = useHasPermission("surveyguru", "share");
-  const isWorkflowComplete = Boolean(selectedBusiness?._id && eventId && formId);
 
   const surveyRecipientFilterOptions = useMemo(
     () => [
@@ -653,68 +586,20 @@ export default function RecipientsManagePage() {
     [canSendWhatsapp, t],
   );
 
-  const onWorkflowEventChange = (nextEventId) => {
-    setEventId(nextEventId);
-    setPage(1);
-    setQ("");
-    setStatus("");
-    const stillValidForm = forms.find(
-      (f) =>
-        String(f._id) === String(formId) &&
-        (!nextEventId ||
-          String(f.eventId?._id || f.eventId) === String(nextEventId))
-    );
-    if (!stillValidForm) {
-      setFormId("");
-      setRows([]);
-      setTotal(0);
-    }
-  };
-
-  const onWorkflowFormChange = (nextFormId) => {
-    setFormId(nextFormId);
-    setPage(1);
-    setQ("");
-    setStatus("");
-  };
-
   const openFilters = () => {
-    setMEventId(eventId || "");
-    setMFormId(formId || "");
     setMQ(q || "");
     setMStatus(status || "");
     setFiltersOpen(true);
   };
 
-  const applyFilters = async () => {
-    const nextEventId = mEventId || "";
-    const nextFormId = mFormId || "";
+  const applyFilters = () => {
     const nextQ = (mQ || "").trim();
     const nextStatus = mStatus || "";
 
     setPage(1);
-    setEventId(nextEventId);
-    setFormId(nextFormId);
     setQ(nextQ);
     setStatus(nextStatus);
     setFiltersOpen(false);
-
-    if (nextFormId) {
-      setLoading(true);
-      const res = await listRecipients({
-        formId: nextFormId,
-        page: 1,
-        limit,
-        ...(nextQ ? { q: nextQ } : {}),
-        ...(nextStatus ? { status: nextStatus } : {}),
-      });
-
-      setRows(res.recipients || []);
-      setTotal(res.pagination.total || 0);
-      setLoading(false);
-    } else {
-      setRows([]);
-    }
   };
 
   const onCopySurveyLink = (r) => {
@@ -844,21 +729,43 @@ export default function RecipientsManagePage() {
     );
   };
 
+  if (formState !== "ready") {
+    return (
+      <Box dir={dir} sx={{ minHeight: "100vh" }}>
+        <Container maxWidth={false} disableGutters>
+          <BreadcrumbsNav />
+          <Box sx={{ mt: 4, textAlign: "center" }}>
+            {formState === "loading" ? (
+              <>
+                <CircularProgress size={28} />
+                <Typography sx={{ mt: 1 }}>{t.loadingForm}</Typography>
+              </>
+            ) : (
+              <Typography color="error">
+                {formState === "denied"
+                  ? t.accessDenied
+                  : formState === "deleted"
+                    ? t.formDeleted
+                    : t.formNotFound}
+              </Typography>
+            )}
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
+
+  const breadcrumbItems = getSurveyRecipientBreadcrumbItems({
+    surveyGuruLabel: t.surveyGuru,
+    surveyFormsLabel: t.surveyForms,
+    formTitle: selectedForm?.title,
+    recipientsLabel: t.title,
+  });
+
   return (
     <Box dir={dir} sx={{ minHeight: "100vh" }}>
-      <BusinessDrawer
-        open={bizDrawerOpen}
-        onClose={() => setBizDrawerOpen(false)}
-        businesses={businesses}
-        selectedBusinessSlug={selectedBizSlug}
-        onSelect={(slug) => {
-          setSelectedBizSlug(slug);
-          setSelectedBusiness(slug);
-          setBizDrawerOpen(false);
-        }}
-      />
       <Container maxWidth={false} disableGutters>
-        <BreadcrumbsNav />
+        <BreadcrumbsNav items={breadcrumbItems} />
 
         <Box
           sx={{
@@ -866,423 +773,51 @@ export default function RecipientsManagePage() {
             justifyContent: "space-between",
             alignItems: "flex-start",
             flexWrap: "wrap",
-            rowGap: 12 / 8,
+            gap: 2,
             mt: 2,
           }}
         >
-          <Box sx={{ minWidth: 260 }}>
-            <Typography variant="h4" sx={{
-              fontWeight: "bold"
-            }}>
-              {t.title}
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+              {selectedForm?.title || t.title}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                mt: 0.5
-              }}>
-              {t.subtitle}
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              {t.linkedEvent}: {selectedEvent?.name || "—"}
             </Typography>
           </Box>
-
-          {!selectedBusiness?._id && (user?.role === "admin" || user?.role === "superadmin") && (
-            <InlineBusinessPicker
-              businesses={businesses}
-              onSelect={(slug) => {
-                setSelectedBizSlug(slug);
-                setSelectedBusiness(slug);
-              }}
-            />
-          )}
           <AuditSearchClearButton />
-
-          <Box
-            sx={{
-              width: "100%",
-              mt: 1,
-              p: { xs: 0, sm: 0.5 },
-            }}
-          >
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle1" sx={{
-                fontWeight: 700
-              }}>
-                {t.workflowTitle}
-              </Typography>
-
-              <Box sx={{ display: { xs: "none", md: "block" } }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{
-                    alignItems: "center",
-                    overflowX: "auto",
-                    pb: 0.5,
-                    flexWrap: "nowrap"
-                  }}>
-                  <Stack
-                    direction="row"
-                    spacing={0.75}
-                    sx={{
-                      alignItems: "center",
-                      whiteSpace: "nowrap"
-                    }}>
-                    <Stack direction="row" spacing={0.5} sx={{
-                      alignItems: "center"
-                    }}>
-                      {selectedBusiness?._id ? (
-                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                      ) : (
-                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                      )}
-                      <Typography
-                        variant="body2"
-                        color={selectedBusiness?._id ? "success.main" : "text.secondary"}
-                        sx={{
-                          fontWeight: selectedBusiness?._id ? 700 : 500
-                        }}
-                      >
-                        {t.stepBusiness}
-                      </Typography>
-                    </Stack>
-
-                    <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
-
-                    <Stack direction="row" spacing={0.5} sx={{
-                      alignItems: "center"
-                    }}>
-                      {eventId ? (
-                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                      ) : (
-                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                      )}
-                      <Typography
-                        variant="body2"
-                        color={eventId ? "success.main" : "text.secondary"}
-                        sx={{
-                          fontWeight: eventId ? 700 : 500
-                        }}
-                      >
-                        {t.stepEvent}
-                      </Typography>
-                    </Stack>
-
-                    <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
-
-                    <Stack direction="row" spacing={0.5} sx={{
-                      alignItems: "center"
-                    }}>
-                      {formId ? (
-                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                      ) : (
-                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                      )}
-                      <Typography
-                        variant="body2"
-                        color={formId ? "success.main" : "text.secondary"}
-                        sx={{
-                          fontWeight: formId ? 700 : 500
-                        }}
-                      >
-                        {t.stepForm}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Stack>
-
-                <Stack
-                  direction="row"
-                  sx={{
-                    alignItems: "center",
-                    pb: 0.5,
-                    flexWrap: "wrap",
-                    mt: 0.5,
-                    columnGap: 1,
-                    rowGap: 1,
-                    "& > *": { flexShrink: 0 },
-                  }}>
-                  {selectedBusiness?._id && <Button
-                    variant="outlined"
-                    startIcon={<ICONS.business fontSize="small" />}
-                    onClick={() => setBizDrawerOpen(true)}
-                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                  >
-                    {t.selectBusiness}
-                  </Button>}
-
-                  <FormControl size="small" sx={{ minWidth: 210 }} disabled={!selectedBusiness?._id}>
-                    <InputLabel>{t.chooseEvent}</InputLabel>
-                    <Select
-                      label={t.chooseEvent}
-                      value={eventId}
-                      onChange={(e) => onWorkflowEventChange(e.target.value)}
-                    >
-                      <MenuItem value="">{t.any}</MenuItem>
-                      {events.map((ev) => (
-                        <MenuItem key={ev._id} value={ev._id}>
-                          {ev.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl size="small" sx={{ minWidth: 240 }} disabled={!selectedBusiness?._id}>
-                    <InputLabel>{t.chooseForm}</InputLabel>
-                    <Select
-                      label={t.chooseForm}
-                      value={formId}
-                      onChange={(e) => onWorkflowFormChange(e.target.value)}
-                    >
-                      {filteredForms.map((f) => (
-                        <MenuItem key={f._id} value={f._id}>
-                          {f.title}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  {canBulkImport && (
-                    <Button
-                      variant="contained"
-                      startIcon={
-                        syncLoading ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <ICONS.refresh fontSize="small" />
-                        )
-                      }
-                      disabled={!canSync || syncLoading}
-                      onClick={handleSync}
-                      sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                    >
-                      {syncLoading && syncProgress.total
-                        ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
-                        : syncLoading
-                          ? `${t.sync}...`
-                          : t.sync}
-                    </Button>
-                  )}
-
-                  {(canSendEmail || canSendWhatsapp) && (
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      disabled={sendingEmails || !formId}
-                      startIcon={
-                        sendingEmails ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <ICONS.email fontSize="small" />
-                        )
-                      }
-                      onClick={() => setBulkEmailModalOpen(true)}
-                      sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                    >
-                      {sendingEmails && emailProgress.total
-                        ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
-                        : sendingEmails
-                          ? t.sendingEmails
-                          : t.bulkEmail}
-                    </Button>
-                  )}
-
-                  {selectedBusiness?._id && <Button
-                    variant="outlined"
-                    startIcon={<ICONS.filter fontSize="small" />}
-                    disabled={!isWorkflowComplete}
-                    onClick={openFilters}
-                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                  >
-                    {t.filtersActions}
-                  </Button>}
-                </Stack>
-              </Box>
-
-              <Box sx={{ display: { xs: "block", md: "none" } }}>
-                <Stack
-                  direction="row"
-                  spacing={0.75}
-                  sx={{
-                    alignItems: "center",
-                    overflowX: "auto",
-                    whiteSpace: "nowrap"
-                  }}>
-                  <Stack direction="row" spacing={0.5} sx={{
-                    alignItems: "center"
-                  }}>
-                    {selectedBusiness?._id ? (
-                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                    ) : (
-                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                    )}
-                    <Typography
-                      variant="body2"
-                      color={selectedBusiness?._id ? "success.main" : "text.secondary"}
-                      sx={{
-                        fontWeight: selectedBusiness?._id ? 700 : 500
-                      }}
-                    >
-                      {t.stepBusiness}
-                    </Typography>
-                  </Stack>
-
-                  <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
-
-                  <Stack direction="row" spacing={0.5} sx={{
-                    alignItems: "center"
-                  }}>
-                    {eventId ? (
-                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                    ) : (
-                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                    )}
-                    <Typography
-                      variant="body2"
-                      color={eventId ? "success.main" : "text.secondary"}
-                      sx={{
-                        fontWeight: eventId ? 700 : 500
-                      }}
-                    >
-                      {t.stepEvent}
-                    </Typography>
-                  </Stack>
-
-                  <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
-
-                  <Stack direction="row" spacing={0.5} sx={{
-                    alignItems: "center"
-                  }}>
-                    {formId ? (
-                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
-                    ) : (
-                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
-                    )}
-                    <Typography
-                      variant="body2"
-                      color={formId ? "success.main" : "text.secondary"}
-                      sx={{
-                        fontWeight: formId ? 700 : 500
-                      }}
-                    >
-                      {t.stepForm}
-                    </Typography>
-                  </Stack>
-                </Stack>
-
-                <Stack direction={{ xs: "column", md: "row" }} sx={{
-                  mt: 1.25,
-                  flexWrap: "wrap",
-                  columnGap: 1.25,
-                  rowGap: 1,
-                  "& > *": { flexShrink: 0 },
-                }}>
-                  {selectedBusiness?._id && <Button
-                    variant="outlined"
-                    startIcon={<ICONS.business fontSize="small" />}
-                    onClick={() => setBizDrawerOpen(true)}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {t.selectBusiness}
-                  </Button>}
-
-                  <FormControl size="small" sx={{ minWidth: 220 }} disabled={!selectedBusiness?._id}>
-                    <InputLabel>{t.chooseEvent}</InputLabel>
-                    <Select
-                      label={t.chooseEvent}
-                      value={eventId}
-                      onChange={(e) => onWorkflowEventChange(e.target.value)}
-                    >
-                      <MenuItem value="">{t.any}</MenuItem>
-                      {events.map((ev) => (
-                        <MenuItem key={ev._id} value={ev._id}>
-                          {ev.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl size="small" sx={{ minWidth: 260 }} disabled={!selectedBusiness?._id}>
-                    <InputLabel>{t.chooseForm}</InputLabel>
-                    <Select
-                      label={t.chooseForm}
-                      value={formId}
-                      onChange={(e) => onWorkflowFormChange(e.target.value)}
-                    >
-                      {filteredForms.map((f) => (
-                        <MenuItem key={f._id} value={f._id}>
-                          {f.title}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Stack>
-
-                <Stack direction={{ xs: "column", sm: "row" }} sx={{
-                  mt: 1.25,
-                  flexWrap: "wrap",
-                  columnGap: 1,
-                  rowGap: 1,
-                  "& > *": { flexShrink: 0 },
-                }}>
-                  {canBulkImport && (
-                    <Button
-                      variant="contained"
-                      startIcon={
-                        syncLoading ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <ICONS.refresh fontSize="small" />
-                        )
-                      }
-                      disabled={!canSync || syncLoading}
-                      onClick={handleSync}
-                      sx={getStartIconSpacing(dir)}
-                    >
-                      {syncLoading && syncProgress.total
-                        ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
-                        : syncLoading
-                          ? `${t.sync}...`
-                          : t.sync}
-                    </Button>
-                  )}
-
-                  {(canSendEmail || canSendWhatsapp) && (
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      disabled={sendingEmails || !formId}
-                      startIcon={
-                        sendingEmails ? (
-                          <CircularProgress size={20} color="inherit" />
-                        ) : (
-                          <ICONS.email fontSize="small" />
-                        )
-                      }
-                      onClick={() => setBulkEmailModalOpen(true)}
-                      sx={getStartIconSpacing(dir)}
-                    >
-                      {sendingEmails && emailProgress.total
-                        ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
-                        : sendingEmails
-                          ? t.sendingEmails
-                          : t.bulkEmail}
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outlined"
-                    startIcon={<ICONS.filter fontSize="small" />}
-                    disabled={!isWorkflowComplete}
-                    onClick={openFilters}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {t.filtersActions}
-                  </Button>
-                </Stack>
-              </Box>
-            </Stack>
-          </Box>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            {canBulkImport && (
+              <Button
+                variant="contained"
+                startIcon={syncLoading ? <CircularProgress size={20} color="inherit" /> : <ICONS.refresh fontSize="small" />}
+                disabled={!canSync || syncLoading}
+                onClick={handleSync}
+                sx={getStartIconSpacing(dir)}
+              >
+                {syncLoading && syncProgress.total
+                  ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+                  : syncLoading
+                    ? `${t.sync}...`
+                    : t.sync}
+              </Button>
+            )}
+            {(canSendEmail || canSendWhatsapp) && (
+              <Button
+                variant="contained"
+                color="secondary"
+                disabled={sendingEmails}
+                startIcon={<ICONS.email fontSize="small" />}
+                onClick={() => setBulkEmailModalOpen(true)}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.bulkEmail}
+              </Button>
+            )}
+            <Button variant="outlined" startIcon={<ICONS.filter fontSize="small" />} onClick={openFilters} sx={getStartIconSpacing(dir)}>
+              {t.filtersActions}
+            </Button>
+          </Stack>
         </Box>
 
         <Divider sx={{ my: 2 }} />
